@@ -1,0 +1,60 @@
+<resources>
+    <string name="app_name">Face Attendance System</string>
+
+    <!-- Login & Register -->
+    <string name="login_title">Connexion</string>
+    <string name="register_title">Inscription</string>
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Mot de passe</string>
+    <string name="full_name_hint">Nom complet</string>
+    <string name="phone_hint">Téléphone</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_student">Dashboard Étudiant</string>
+    <string name="dashboard_teacher">Dashboard Enseignant</string>
+    <string name="dashboard_admin">Dashboard Administrateur</string>
+
+    <!-- Common -->
+    <string name="loading">Chargement...</string>
+    <string name="error">Erreur</string>
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="delete">Supprimer</string>
+    <string name="edit">Modifier</string>
+
+    <!-- Attendance -->
+    <string name="present">Présent</string>
+    <string name="absent">Absent</string>
+    <string name="justified">Justifié</string>
+
+    <!-- Departments -->
+    <string-array name="departments">
+        <item>Informatique</item>
+        <item>Mathématiques</item>
+        <item>Physique</item>
+        <item>Chimie</item>
+        <item>Biologie</item>
+        <item>Génie Civil</item>
+        <item>Génie Électrique</item>
+        <item>Économie</item>
+        <item>Gestion</item>
+    </string-array>
+
+    <!-- Years -->
+    <string-array name="academic_years">
+        <item>L1</item>
+        <item>L2</item>
+        <item>L3</item>
+        <item>M1</item>
+        <item>M2</item>
+        <item>Doctorat</item>
+        <item>N/A</item>
+    </string-array>
+
+    <!-- User Roles -->
+    <string-array name="user_roles">
+        <item>Étudiant</item>
+        <item>Enseignant</item>
+        <item>Administrateur</item>
+    </string-array>
+</resources>

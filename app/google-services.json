@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "888963039211",
+    "project_id": "projetiot-e854b",
+    "storage_bucket": "projetiot-e854b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:888963039211:android:2d400dc8431b3c9e5823ae",
+        "android_client_info": {
+          "package_name": "com.example.attendancesystem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyApKB2naOVuncbWNApfostpgyXRKv366Sw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
