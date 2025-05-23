@@ -10,7 +10,9 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" /> <!-- Hardware features -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <!-- Hardware features -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="true" />
@@ -26,22 +28,29 @@
         android:theme="@style/Theme.FaceAttendanceSystem"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+        <!-- Activities that use custom toolbar (NoActionBar theme) -->
         <activity
             android:name=".activities.SessionManagementActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
             android:name=".activities.JustificationActivity"
-            android:exported="false" /> <!-- Main Activity (Splash/Router) -->
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
+
+        <!-- Main Activity (Splash/Router) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:theme="@style/Theme.FaceAttendanceSystem.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity> <!-- Auth Activities -->
+        </activity>
+
+        <!-- Auth Activities -->
         <activity
             android:name=".activities.LoginActivity"
             android:exported="false"
@@ -49,31 +58,43 @@
         <activity
             android:name=".activities.RegisterActivity"
             android:exported="false"
-            android:theme="@style/Theme.FaceAttendanceSystem.NoActionBar" /> <!-- Dashboard Activities -->
+            android:theme="@style/Theme.FaceAttendanceSystem.NoActionBar" />
+
+        <!-- Dashboard Activities -->
         <activity
             android:name=".activities.StudentDashboardActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
             android:name=".activities.TeacherDashboardActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
             android:name=".activities.AdminDashboardActivity"
-            android:exported="false" /> <!-- Feature Activities -->
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
+
+        <!-- Feature Activities -->
         <activity
             android:name=".activities.ProfileActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
             android:name=".activities.AttendanceHistoryActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
             android:name=".activities.CourseManagementActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
             android:name=".activities.ProfilePhotoActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem.ActionBar" />
         <activity
             android:name=".activities.TestActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
     </application>
 
 </manifest>

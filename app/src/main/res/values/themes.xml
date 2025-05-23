@@ -1,6 +1,6 @@
 <resources>
-    <!-- Base application theme -->
-    <style name="Theme.FaceAttendanceSystem" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+    <!-- Base application theme with NoActionBar -->
+    <style name="Theme.FaceAttendanceSystem" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primary_color</item>
         <item name="colorPrimaryVariant">@color/primary_color_dark</item>
         <item name="colorOnPrimary">@color/white</item>
@@ -11,7 +11,19 @@
         <item name="android:windowBackground">@color/background_color</item>
     </style>
 
-    <!-- NoActionBar theme -->
+    <!-- Theme with ActionBar for activities that don't use custom toolbar -->
+    <style name="Theme.FaceAttendanceSystem.ActionBar" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorPrimaryVariant">@color/primary_color_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent_color</item>
+        <item name="colorSecondaryVariant">@color/accent_color</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <item name="android:windowBackground">@color/background_color</item>
+    </style>
+
+    <!-- NoActionBar theme (explicit) -->
     <style name="Theme.FaceAttendanceSystem.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
