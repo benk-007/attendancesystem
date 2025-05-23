@@ -34,6 +34,7 @@
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="transparent">#00000000</color>
+    <color name="blue_pending">#2196F3</color>
 
     <!-- Couleurs de Material Design (pour compatibilité) -->
     <color name="purple_200">#FFBB86FC</color>
@@ -41,4 +42,6 @@
     <color name="purple_700">#FF3700B3</color>
     <color name="teal_200">#FF03DAC5</color>
     <color name="teal_700">#FF018786</color>
+
+    <color name="green_approved">#4CAF50</color> <color name="red_rejected">#F44336</color>
 </resources>

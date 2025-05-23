@@ -6,6 +6,8 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.example.attendancesystem.models.Justification;
+import com.example.attendancesystem.models.Session;
 import com.example.attendancesystem.models.Student;
 import com.example.attendancesystem.models.Teacher;
 import com.example.attendancesystem.models.Admin;
@@ -14,19 +16,26 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.Timestamp;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FirebaseManager {
     private static final String TAG = "FirebaseManager";
@@ -48,6 +57,23 @@ public class FirebaseManager {
 
     // Singleton pattern
     private static FirebaseManager instance;
+
+    public static class AttendanceStats {
+        private int totalSessions;
+        private int attendedSessions;
+        private double attendanceRate;
+
+        public AttendanceStats(int totalSessions, int attendedSessions) {
+            this.totalSessions = totalSessions;
+            this.attendedSessions = attendedSessions;
+            this.attendanceRate = totalSessions > 0 ? (double) attendedSessions / totalSessions * 100 : 0.0;
+        }
+
+        // Getters
+        public int getTotalSessions() { return totalSessions; }
+        public int getAttendedSessions() { return attendedSessions; }
+        public double getAttendanceRate() { return attendanceRate; }
+    }
 
     private FirebaseManager() {
         mAuth = FirebaseAuth.getInstance();
@@ -173,36 +199,7 @@ public class FirebaseManager {
                 });
     }
 
-    /**
-     * Récupérer un étudiant par son email
-     */
-    public void getStudentByEmail(String email, DataCallback<Student> callback) {
-        db.collection(STUDENTS_COLLECTION)
-                .document(email)
-                .get()
-                .addOnCompleteListener(new OnCompleteListener<DocumentSnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<DocumentSnapshot> task) {
-                        if (task.isSuccessful()) {
-                            DocumentSnapshot document = task.getResult();
-                            if (document.exists()) {
-                                Student student = document.toObject(Student.class);
-                                if (student != null) {
-                                    callback.onSuccess(student);
-                                } else {
-                                    callback.onFailure("Erreur de conversion des données");
-                                }
-                            } else {
-                                callback.onFailure("Étudiant non trouvé");
-                            }
-                        } else {
-                            callback.onFailure(task.getException().getMessage());
-                        }
-                    }
-                });
-    }
-
-    /**
+    /*
      * Mettre à jour le profil étudiant
      */
     public void updateStudent(Student student, DataCallback<Void> callback) {
@@ -622,6 +619,549 @@ public class FirebaseManager {
             }
         });
     }
+
+    public void saveSession(Session session, DataCallback<String> callback) {
+        db.collection(SESSIONS_COLLECTION)
+                .add(session.toMap())
+                .addOnSuccessListener(documentReference -> {
+                    String sessionId = documentReference.getId();
+                    session.setSessionId(sessionId);
+
+                    // Mettre à jour avec l'ID généré
+                    documentReference.update("sessionId", sessionId);
+
+                    Log.d(TAG, "Session sauvegardée: " + sessionId);
+                    callback.onSuccess(sessionId);
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Erreur sauvegarde session", e);
+                    callback.onFailure(e.getMessage());
+                });
+    }
+
+    /**
+     * Mettre à jour une session
+     */
+    public void updateSession(Session session, DataCallback<Void> callback) {
+        if (session.getSessionId() == null) {
+            callback.onFailure("ID de session manquant");
+            return;
+        }
+
+        db.collection(SESSIONS_COLLECTION)
+                .document(session.getSessionId())
+                .update(session.toMap())
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Session mise à jour: " + session.getSessionId());
+                    callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Erreur mise à jour session", e);
+                    callback.onFailure(e.getMessage());
+                });
+    }
+
+    // Add these NEW methods to your FirebaseManager.java (replace the existing session methods)
+
+// =================== FIELD-BASED SESSION MANAGEMENT ===================
+
+    /**
+     * Obtenir les sessions d'aujourd'hui pour un étudiant (par département, filière et année)
+     */
+    public void getTodaySessionsForStudent(String studentEmail, String department, String field, String year, DataCallback<List<Session>> callback) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Timestamp startOfDay = new Timestamp(calendar.getTime());
+
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Timestamp startOfNextDay = new Timestamp(calendar.getTime());
+
+        // Rechercher les sessions pour ce département, filière et année
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("department", department)
+                .whereEqualTo("field", field)
+                .whereArrayContains("targetYears", year)
+                .whereGreaterThanOrEqualTo("startTime", startOfDay)
+                .whereLessThan("startTime", startOfNextDay)
+                .orderBy("startTime")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Session> sessions = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                                sessions.add(session);
+                            }
+                        }
+                        Log.d(TAG, "Found " + sessions.size() + " sessions today for " + field + " " + year);
+                        callback.onSuccess(sessions);
+                    } else {
+                        Log.e(TAG, "Error getting today's sessions", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Obtenir la prochaine session pour un étudiant (par département, filière et année)
+     */
+    public void getNextSessionForStudent(String studentEmail, String department, String field, String year, DataCallback<Session> callback) {
+        Timestamp now = Timestamp.now();
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("department", department)
+                .whereEqualTo("field", field)
+                .whereArrayContains("targetYears", year)
+                .whereIn("status", Arrays.asList("scheduled", "active"))
+                .whereGreaterThanOrEqualTo("startTime", now)
+                .orderBy("startTime")
+                .limit(1)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (!querySnapshot.isEmpty()) {
+                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                            }
+                            Log.d(TAG, "Next session found: " + (session != null ? session.getCourseName() : "null"));
+                            callback.onSuccess(session);
+                        } else {
+                            Log.d(TAG, "No future sessions found for " + field + " " + year);
+                            callback.onSuccess(null);
+                        }
+                    } else {
+                        Log.e(TAG, "Error getting next session", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Obtenir les sessions d'aujourd'hui pour un enseignant
+     */
+    public void getTodaySessionsForTeacher(String teacherEmail, DataCallback<List<Session>> callback) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Timestamp startOfDay = new Timestamp(calendar.getTime());
+
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Timestamp startOfNextDay = new Timestamp(calendar.getTime());
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("teacherEmail", teacherEmail)
+                .whereGreaterThanOrEqualTo("startTime", startOfDay)
+                .whereLessThan("startTime", startOfNextDay)
+                .orderBy("startTime")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Session> sessions = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                                sessions.add(session);
+                            }
+                        }
+                        Log.d(TAG, "Found " + sessions.size() + " sessions today for teacher: " + teacherEmail);
+                        callback.onSuccess(sessions);
+                    } else {
+                        Log.e(TAG, "Error getting teacher's today sessions", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Obtenir la prochaine session pour un enseignant
+     */
+    public void getNextSessionForTeacher(String teacherEmail, DataCallback<Session> callback) {
+        Timestamp now = Timestamp.now();
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("teacherEmail", teacherEmail)
+                .whereIn("status", Arrays.asList("scheduled", "active"))
+                .whereGreaterThanOrEqualTo("startTime", now)
+                .orderBy("startTime")
+                .limit(1)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (!querySnapshot.isEmpty()) {
+                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                            }
+                            Log.d(TAG, "Next session found for teacher: " + (session != null ? session.getCourseName() : "null"));
+                            callback.onSuccess(session);
+                        } else {
+                            Log.d(TAG, "No future sessions found for teacher: " + teacherEmail);
+                            callback.onSuccess(null);
+                        }
+                    } else {
+                        Log.e(TAG, "Error getting teacher's next session", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Obtenir les sessions programmées aujourd'hui pour un enseignant
+     */
+    public void getTodayScheduledSessionsForTeacher(String teacherEmail, DataCallback<List<Session>> callback) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Timestamp startOfDay = new Timestamp(calendar.getTime());
+
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
+        Timestamp startOfNextDay = new Timestamp(calendar.getTime());
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("teacherEmail", teacherEmail)
+                .whereEqualTo("status", "scheduled")
+                .whereGreaterThanOrEqualTo("startTime", startOfDay)
+                .whereLessThan("startTime", startOfNextDay)
+                .orderBy("startTime")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Session> sessions = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                                sessions.add(session);
+                            }
+                        }
+                        Log.d(TAG, "Found " + sessions.size() + " scheduled sessions today for teacher: " + teacherEmail);
+                        callback.onSuccess(sessions);
+                    } else {
+                        Log.e(TAG, "Error getting teacher's scheduled sessions", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Obtenir les statistiques d'assiduité d'un étudiant (par département et filière)
+     */
+    public void getStudentAttendanceStatistics(String studentEmail, String department, String field, String year, DataCallback<AttendanceStats> callback) {
+        // Calculer les statistiques des 30 derniers jours
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -30);
+        Timestamp thirtyDaysAgo = new Timestamp(calendar.getTime());
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("department", department)
+                .whereEqualTo("field", field)
+                .whereArrayContains("targetYears", year)
+                .whereEqualTo("status", "completed")
+                .whereGreaterThanOrEqualTo("endTime", thirtyDaysAgo)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        int totalSessions = 0;
+                        int attendedSessions = 0;
+
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Session session = document.toObject(Session.class);
+                            if (session != null && session.getEnrolledStudentEmails().contains(studentEmail)) {
+                                totalSessions++;
+                                if (session.getPresentStudentEmails().contains(studentEmail)) {
+                                    attendedSessions++;
+                                }
+                            }
+                        }
+
+                        AttendanceStats stats = new AttendanceStats(totalSessions, attendedSessions);
+                        Log.d(TAG, "Attendance stats for " + studentEmail + ": " + attendedSessions + "/" + totalSessions);
+                        callback.onSuccess(stats);
+                    } else {
+                        Log.e(TAG, "Error getting attendance statistics", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Obtenir les sessions d'une filière pour une semaine donnée
+     */
+    public void getWeeklySessionsForField(String department, String field, String year, Timestamp weekStart, DataCallback<List<Session>> callback) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(weekStart.toDate());
+
+        // End of week (7 days later)
+        calendar.add(Calendar.DAY_OF_MONTH, 7);
+        Timestamp weekEnd = new Timestamp(calendar.getTime());
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("department", department)
+                .whereEqualTo("field", field)
+                .whereArrayContains("targetYears", year)
+                .whereGreaterThanOrEqualTo("startTime", weekStart)
+                .whereLessThan("startTime", weekEnd)
+                .orderBy("startTime")
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Session> sessions = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                                sessions.add(session);
+                            }
+                        }
+                        callback.onSuccess(sessions);
+                    } else {
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Auto-enroll students in sessions based on their field and year
+     */
+    public void autoEnrollStudentsInSession(Session session, DataCallback<Void> callback) {
+        // Get all students matching the session's criteria
+        db.collection(STUDENTS_COLLECTION)
+                .whereEqualTo("department", session.getDepartment())
+                .whereEqualTo("field", session.getField())
+                .whereEqualTo("year", session.getTargetYears().get(0)) // For simplicity, taking first target year
+                .whereEqualTo("isActive", true)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<String> studentEmails = new ArrayList<>();
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Student student = document.toObject(Student.class);
+                            if (student != null) {
+                                studentEmails.add(student.getEmail());
+                            }
+                        }
+
+                        // Update session with enrolled students
+                        session.setEnrolledStudentEmails(studentEmails);
+
+                        // Save updated session
+                        updateSession(session, callback);
+
+                        Log.d(TAG, "Auto-enrolled " + studentEmails.size() + " students in session: " + session.getCourseName());
+                    } else {
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+    // Add this method to your existing FirebaseManager.java class
+
+    /**
+     * Obtenir une session active pour un enseignant
+     */
+    public void getActiveSessionForTeacher(String teacherEmail, DataCallback<Session> callback) {
+        Log.d(TAG, "Getting active session for teacher: " + teacherEmail);
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereEqualTo("teacherEmail", teacherEmail)
+                .whereEqualTo("status", "active")
+                .limit(1)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (!querySnapshot.isEmpty()) {
+                            DocumentSnapshot document = querySnapshot.getDocuments().get(0);
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                session.setSessionId(document.getId());
+                            }
+                            Log.d(TAG, "Active session found: " + (session != null ? session.getCourseName() : "null"));
+                            callback.onSuccess(session);
+                        } else {
+                            Log.d(TAG, "No active session found for teacher: " + teacherEmail);
+                            callback.onSuccess(null);
+                        }
+                    } else {
+                        Log.e(TAG, "Error getting active session", task.getException());
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+    public void getStudentAttendanceStatistics(String studentEmail, DataCallback<AttendanceStats> callback) {
+        // Calculer les statistiques des 30 derniers jours
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -30);
+        Timestamp thirtyDaysAgo = new Timestamp(calendar.getTime());
+
+        db.collection(SESSIONS_COLLECTION)
+                .whereArrayContains("enrolledStudentEmails", studentEmail)
+                .whereEqualTo("status", "completed")
+                .whereGreaterThanOrEqualTo("endTime", thirtyDaysAgo)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        int totalSessions = 0;
+                        int attendedSessions = 0;
+
+                        for (DocumentSnapshot document : task.getResult()) {
+                            Session session = document.toObject(Session.class);
+                            if (session != null) {
+                                totalSessions++;
+                                if (session.getPresentStudentEmails().contains(studentEmail)) {
+                                    attendedSessions++;
+                                }
+                            }
+                        }
+
+                        AttendanceStats stats = new AttendanceStats(totalSessions, attendedSessions);
+                        callback.onSuccess(stats);
+                    } else {
+                        callback.onFailure(task.getException().getMessage());
+                    }
+                });
+    }
+
+    // ---------------------------------------------- JUSTIFS
+    public void getStudentByEmail(String email, DataCallback<Student> callback) {
+        db.collection(STUDENTS_COLLECTION)
+                .document(email)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        Student student = documentSnapshot.toObject(Student.class);
+                        if (student != null) { // Added null check for robustness
+                            callback.onSuccess(student);
+                        } else {
+                            callback.onFailure("Erreur de conversion des données"); // More specific error
+                        }
+                    } else {
+                        callback.onFailure("Étudiant non trouvé");
+                    }
+                })
+                .addOnFailureListener(e -> callback.onFailure("Erreur de récupération de l'étudiant: " + e.getMessage()));
+    }
+
+    // This method needs to be implemented to fetch courses associated with the student
+    // based on department, field, and year.
+    public void getStudentCourses(String studentEmail, String department, String field, String year, DataCallback<List<Map<String, String>>> callback) {
+        // This is a placeholder. You need to implement the actual logic to fetch courses
+        // from your 'courses' collection based on the student's academic info.
+        // For example:
+        db.collection("courses")
+                .whereEqualTo("department", department)
+                .whereEqualTo("field", field)
+                .whereEqualTo("year", year)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Map<String, String>> courses = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Map<String, String> course = new HashMap<>();
+                        course.put("id", document.getId());
+                        course.put("name", document.getString("name"));
+                        // Add other relevant course data if needed
+                        courses.add(course);
+                    }
+                    callback.onSuccess(courses);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Error getting student courses: " + e.getMessage()));
+    }
+
+
+    // --- Justification Operations ---
+
+    // Save a new justification (modified to use Justification model with justificationDate)
+    public void saveJustification(Justification justification, DataCallback<String> callback) {
+        db.collection("justifications")
+                .add(justification)
+                .addOnSuccessListener(documentReference -> callback.onSuccess(documentReference.getId()))
+                .addOnFailureListener(e -> callback.onFailure("Error adding justification: " + e.getMessage()));
+    }
+
+    // Get all justifications for a specific student (modified to use studentEmail)
+    public void getStudentJustifications(String studentEmail, DataCallback<List<Justification>> callback) {
+        db.collection("justifications")
+                .whereEqualTo("studentEmail", studentEmail)
+                .orderBy("submittedAt", Query.Direction.DESCENDING) // Order by latest submitted
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Justification> justifications = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        justifications.add(document.toObject(Justification.class));
+                    }
+                    callback.onSuccess(justifications);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Error getting student justifications: " + e.getMessage()));
+    }
+
+    // --- New/Modified: Attendance Operations (to be used by admin after justification approval) ---
+
+    // This method will be used by an ADMIN to update attendance status
+    // after a justification is approved.
+    public void updateAttendanceStatusForJustifiedAbsence(
+            String studentEmail, String courseId, Date justificationDate, DataCallback<Void> callback) {
+
+        // To handle potential time differences and ensure date-based matching,
+        // we'll query for attendance records within a specific day range.
+        Calendar startOfDay = Calendar.getInstance();
+        startOfDay.setTime(justificationDate);
+        startOfDay.set(Calendar.HOUR_OF_DAY, 0);
+        startOfDay.set(Calendar.MINUTE, 0);
+        startOfDay.set(Calendar.SECOND, 0);
+        startOfDay.set(Calendar.MILLISECOND, 0);
+
+        Calendar endOfDay = Calendar.getInstance();
+        endOfDay.setTime(justificationDate);
+        endOfDay.set(Calendar.HOUR_OF_DAY, 23);
+        endOfDay.set(Calendar.MINUTE, 59);
+        endOfDay.set(Calendar.SECOND, 59);
+        endOfDay.set(Calendar.MILLISECOND, 999);
+
+
+        db.collection("attendance")
+                .whereEqualTo("studentEmail", studentEmail)
+                .whereEqualTo("courseId", courseId)
+                .whereGreaterThanOrEqualTo("timestamp", startOfDay.getTime())
+                .whereLessThanOrEqualTo("timestamp", endOfDay.getTime())
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (queryDocumentSnapshots.isEmpty()) {
+                        callback.onFailure("No attendance record found for this student, course, and date.");
+                        return;
+                    }
+
+                    // Batch update to ensure all matching records are updated
+                    // This is crucial if a student had multiple sessions/attendances for the same course on one day
+                    // and was absent from all.
+                    FirebaseFirestore.getInstance().runBatch(batch -> {
+                                for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                                    // Only update if current status is "absent". If it's already "justified" or "present",
+                                    // it means it was handled or not an absence.
+                                    if ("absent".equalsIgnoreCase(document.getString("status"))) {
+                                        batch.update(document.getReference(), "status", "justified");
+                                    }
+                                }
+                            })
+                            .addOnSuccessListener(aVoid -> callback.onSuccess(null))
+                            .addOnFailureListener(e -> callback.onFailure("Error updating attendance status in batch: " + e.getMessage()));
+                })
+                .addOnFailureListener(e -> callback.onFailure("Error querying attendance for update: " + e.getMessage()));
+    }
+
 
     // =================== MÉTHODES UTILITAIRES ===================
 

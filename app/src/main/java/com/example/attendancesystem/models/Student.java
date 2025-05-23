@@ -6,6 +6,8 @@ import java.util.Map;
 
 public class Student {
     private String email; // Identifiant unique
+    // NEW fields for field-based architecture
+    private String field; // "Data Science", "Software Engineering", "Cybersecurity", etc.
     private String fullName;
     private String studentId;
     private String profileImageUrl;
@@ -23,18 +25,19 @@ public class Student {
         this.notificationPreferences = new NotificationPreferences();
     }
 
-    // Constructeur avec paramètres essentiels
-    public Student(String email, String fullName, String studentId, String department, String year) {
+
+
+    public Student(String email, String fullName, String studentId, String department, String year, String field) {
         this.email = email;
         this.fullName = fullName;
         this.studentId = studentId;
         this.department = department;
         this.year = year;
-        this.createdAt = Timestamp.now();
+        this.field = field; // NEW
         this.isActive = true;
-        this.profileImageUrl = "";
-        this.notificationPreferences = new NotificationPreferences();
+        this.createdAt = Timestamp.now();
         this.lastUpdatedAt = Timestamp.now();
+        this.notificationPreferences = new NotificationPreferences();
     }
 
     // Méthode pour convertir en Map pour Firebase
@@ -49,6 +52,7 @@ public class Student {
         map.put("phoneNumber", phoneNumber);
         map.put("department", department);
         map.put("year", year);
+        map.put("field", field); // NEW
         if (notificationPreferences != null) {
             map.put("notificationPreferences", notificationPreferences.toMap());
         }
@@ -56,6 +60,11 @@ public class Student {
         map.put("lastUpdatedAt", lastUpdatedAt);
         return map;
     }
+
+
+    // Add getter and setter:
+    public String getField() { return field; }
+    public void setField(String field) { this.field = field; }
 
     // Getters
     public String getEmail() { return email; }
