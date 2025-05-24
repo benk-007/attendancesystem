@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_justification_student_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:layout_marginBottom="4dp"
+            tools:text="Étudiant: John Doe"
+            android:visibility="gone"/> <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="4dp">
+
+        <TextView
+            android:id="@+id/tv_justification_course_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            tools:text="Cours: Informatique"/>
+
+        <TextView
+            android:id="@+id/tv_justification_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingVertical="4dp"
+            android:background="@drawable/rounded_corner_bg"
+            tools:text="submitted"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            tools:backgroundTint="@color/blue_pending"/>
+
+    </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_justification_absence_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"
+            tools:text="Date d'absence: 15/05/2024"/>
+
+        <TextView
+            android:id="@+id/tv_justification_reason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"
+            tools:text="Raison: Maladie"/>
+
+        <TextView
+            android:id="@+id/tv_justification_description"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:layout_marginBottom="4dp"
+            tools:text="Description: Fièvre et toux sévère, ne peut pas se déplacer."/>
+
+        <TextView
+            android:id="@+id/tv_justification_submitted_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            tools:text="Soumis le: 17/05/2024 10:30"/>
+
+        <TextView
+            android:id="@+id/tv_justification_reviewed_by"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/black"
+            android:textStyle="italic"
+            tools:text="Révisé par: admin@example.com"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tv_justification_reviewed_at"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:textStyle="italic"
+            tools:text="Le: 18/05/2024 09:00"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tv_justification_review_comments"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/black"
+            tools:text="Commentaires: Certificat médical reçu et vérifié."
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/tv_justification_approval_reason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="@color/black"
+            tools:text="Raison décision: Certificat validé."
+            android:visibility="gone"/>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>
