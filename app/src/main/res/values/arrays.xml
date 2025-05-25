@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="justification_statuses_filter">
+        <item>Toutes</item>
+        <item>submitted</item>
+        <item>under_review</item>
+        <item>approved</item>
+        <item>rejected</item>
+    </string-array>
+</resources>
