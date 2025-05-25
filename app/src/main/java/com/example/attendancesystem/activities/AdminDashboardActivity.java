@@ -114,8 +114,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private void setupListeners() {
         cardUserManagement.setOnClickListener(v -> {
-            // TODO: Créer l'activité de gestion des utilisateurs
-            Utils.showToast(this, "Gestion utilisateurs - Fonctionnalité à venir");
+            Utils.showToast(this, "Redirection vers la gestion des justifications...");
+            Intent intent = new Intent(AdminDashboardActivity.this, AdminJustificationActivity.class);
+            startActivity(intent);
         });
 
         cardTerminalManagement.setOnClickListener(v -> {

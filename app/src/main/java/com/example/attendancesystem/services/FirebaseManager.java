@@ -1059,20 +1059,19 @@ public class FirebaseManager {
     // This method needs to be implemented to fetch courses associated with the student
     // based on department, field, and year.
     public void getStudentCourses(String studentEmail, String department, String field, String year, DataCallback<List<Map<String, String>>> callback) {
-        // This is a placeholder. You need to implement the actual logic to fetch courses
-        // from your 'courses' collection based on the student's academic info.
-        // For example:
         db.collection("courses")
                 .whereEqualTo("department", department)
                 .whereEqualTo("field", field)
-                .whereEqualTo("year", year)
+                .whereArrayContains("targetYears", year) // Query if the student's year is in the course's targetYears
+                // Optional: You might also want to combine with enrolledStudentEmails if that's still a hard requirement
+                // .whereArrayContains("enrolledStudentEmails", studentEmail)
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Map<String, String>> courses = new ArrayList<>();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         Map<String, String> course = new HashMap<>();
                         course.put("id", document.getId());
-                        course.put("name", document.getString("name"));
+                        course.put("name", document.getString("courseName")); // Use "courseName"
                         // Add other relevant course data if needed
                         courses.add(course);
                     }
@@ -1084,12 +1083,87 @@ public class FirebaseManager {
 
     // --- Justification Operations ---
 
+    /**
+     * Get all justifications from Firestore for admin review.
+     * Can be extended with filtering if needed.
+     */
+    public void getAllJustifications(DataCallback<List<Justification>> callback) {
+        db.collection("justifications")
+                .orderBy("submittedAt", Query.Direction.DESCENDING) // Order by latest submitted
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    List<Justification> justifications = new ArrayList<>();
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        try {
+                            Justification justification = document.toObject(Justification.class);
+                            // Assign the Firestore document ID to the Justification object
+                            justification.setJustificationId(document.getId());
+                            justifications.add(justification);
+                        } catch (Exception e) {
+                            Log.e(TAG, "Error deserializing justification document: " + document.getId(), e);
+                            // Handle corrupted documents gracefully, perhaps skip them
+                        }
+                    }
+                    callback.onSuccess(justifications);
+                })
+                .addOnFailureListener(e -> callback.onFailure("Error getting all justifications: " + e.getMessage()));
+    }
+
+    /**
+     * Update an existing justification in Firestore.
+     */
+    public void updateJustification(Justification justification, DataCallback<Void> callback) {
+        if (justification.getJustificationId() == null || justification.getJustificationId().isEmpty()) {
+            callback.onFailure("Justification ID is missing for update.");
+            return;
+        }
+
+        db.collection("justifications")
+                .document(justification.getJustificationId())
+                .set(justification.toMap()) // Use toMap() to ensure all fields are set correctly
+                .addOnSuccessListener(aVoid -> {
+                    Log.d(TAG, "Justification updated: " + justification.getJustificationId());
+                    callback.onSuccess(null);
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error updating justification", e);
+                    callback.onFailure("Error updating justification: " + e.getMessage());
+                });
+    }
+
     // Save a new justification (modified to use Justification model with justificationDate)
+    /**
+     * Sauvegarder une nouvelle justification dans Firestore.
+     * Définit également l'ID du document généré sur l'objet Justification.
+     */
     public void saveJustification(Justification justification, DataCallback<String> callback) {
         db.collection("justifications")
-                .add(justification)
-                .addOnSuccessListener(documentReference -> callback.onSuccess(documentReference.getId()))
-                .addOnFailureListener(e -> callback.onFailure("Error adding justification: " + e.getMessage()));
+                .add(justification.toMap()) // Use toMap() for explicit control
+                .addOnSuccessListener(documentReference -> {
+                    // IMPORTANT: Set the generated Firestore document ID back to the Justification object
+                    justification.setJustificationId(documentReference.getId());
+                    Log.d(TAG, "Justification saved with ID: " + documentReference.getId());
+
+                    // Now, update the document to include its own ID as a field (optional but good practice)
+                    // This makes it easier to query by ID directly from the document itself if needed.
+                    db.collection("justifications")
+                            .document(documentReference.getId())
+                            .update("justificationId", documentReference.getId())
+                            .addOnSuccessListener(aVoid -> {
+                                Log.d(TAG, "Justification ID field updated in Firestore for: " + documentReference.getId());
+                                callback.onSuccess(documentReference.getId());
+                            })
+                            .addOnFailureListener(e -> {
+                                Log.w(TAG, "Error updating justificationId field in Firestore for: " + documentReference.getId(), e);
+                                // Even if this nested update fails, the document was added,
+                                // and the ID was set on the Java object, so we still call success.
+                                callback.onSuccess(documentReference.getId());
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Log.w(TAG, "Error adding justification", e);
+                    callback.onFailure("Error adding justification: " + e.getMessage());
+                });
     }
 
     // Get all justifications for a specific student (modified to use studentEmail)

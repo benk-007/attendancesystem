@@ -40,6 +40,14 @@ public class Student {
         this.notificationPreferences = new NotificationPreferences();
     }
 
+    public Student(String email, String fullName, String idNumber, String department, String year) {
+        this.email = email;
+        this.fullName = fullName;
+        this.studentId = idNumber;
+        this.department = department;
+        this.year = year;
+    }
+
     // Méthode pour convertir en Map pour Firebase
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();

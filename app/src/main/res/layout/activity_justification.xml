@@ -22,8 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:hint="Date de l'absence"
-        app:startIconDrawable="@drawable/ic_calendar"> <TextView
+        android:hint="Date de l'absence"> <TextView
         android:id="@+id/tv_justification_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

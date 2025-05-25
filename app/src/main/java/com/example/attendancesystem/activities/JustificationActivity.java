@@ -152,7 +152,7 @@ public class JustificationActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Student student) {
                 currentStudent = student;
-                Log.d(TAG, "Student loaded: " + student.getFullName() + " - Field: " + student.getField());
+                Log.d(TAG, "Student loaded: " + student.toString());
                 loadStudentCourses(); // Load courses only after student data is available
                 loadJustifications(); // Load existing justifications for the student
             }

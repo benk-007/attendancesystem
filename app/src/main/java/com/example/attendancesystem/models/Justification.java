@@ -1,7 +1,7 @@
 package com.example.attendancesystem.models;
 
 import com.google.firebase.Timestamp;
-import java.util.Date; // Import Date for justificationDate
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,8 +12,7 @@ public class Justification {
     private String studentId;
     private String courseId;
     private String courseName;
-    // Removed sessionId and attendanceId as per the new requirement
-    private Date justificationDate; // NEW: Date of the absence being justified
+    private Date justificationDate;
 
     private String reason;
     private String description;
@@ -47,10 +46,10 @@ public class Justification {
         this.studentId = studentId;
         this.courseId = courseId;
         this.courseName = courseName;
-        this.justificationDate = justificationDate; // Set the justification date
+        this.justificationDate = justificationDate;
         this.reason = reason;
         this.description = description;
-        this.status = "submitted"; // Default status when created by student
+        this.status = "submitted";
         this.createdAt = Timestamp.now();
         this.lastUpdatedAt = Timestamp.now();
         this.submittedAt = Timestamp.now();
@@ -75,17 +74,17 @@ public class Justification {
         this.lastUpdatedAt = Timestamp.now();
     }
 
-    public void setUnderReview(String reviewerEmail) {
+    public void setUnderReviewStatus(String reviewerEmail) { // Renamed from setUnderReview
         this.status = "under_review";
         this.reviewedBy = reviewerEmail;
         this.lastUpdatedAt = Timestamp.now();
     }
 
-    // Status check methods
-    public boolean isSubmitted() { return "submitted".equals(status); }
-    public boolean isUnderReview() { return "under_review".equals(status); }
-    public boolean isApproved() { return "approved".equals(status); }
-    public boolean isRejected() { return "rejected".equals(status); }
+    // Status check methods - RENAMED TO AVOID AUTOMATIC FIELD CREATION
+    public boolean checkStatusIsSubmitted() { return "submitted".equals(status); }
+    public boolean checkStatusIsUnderReview() { return "under_review".equals(status); }
+    public boolean checkStatusIsApproved() { return "approved".equals(status); }
+    public boolean checkStatusIsRejected() { return "rejected".equals(status); }
 
     // Convert to Map for Firebase (Firestore automatically handles Date to Timestamp conversion)
     public Map<String, Object> toMap() {
@@ -96,7 +95,7 @@ public class Justification {
         map.put("studentId", studentId);
         map.put("courseId", courseId);
         map.put("courseName", courseName);
-        map.put("justificationDate", justificationDate); // Include the new field
+        map.put("justificationDate", justificationDate);
         map.put("reason", reason);
         map.put("description", description);
         map.put("status", status);
@@ -117,7 +116,7 @@ public class Justification {
     public String getStudentId() { return studentId; }
     public String getCourseId() { return courseId; }
     public String getCourseName() { return courseName; }
-    public Date getJustificationDate() { return justificationDate; } // New getter
+    public Date getJustificationDate() { return justificationDate; }
     public String getReason() { return reason; }
     public String getDescription() { return description; }
     public String getStatus() { return status; }
@@ -136,11 +135,11 @@ public class Justification {
     public void setStudentId(String studentId) { this.studentId = studentId; }
     public void setCourseId(String courseId) { this.courseId = courseId; }
     public void setCourseName(String courseName) { this.courseName = courseName; }
-    public void setJustificationDate(Date justificationDate) { this.justificationDate = justificationDate; } // New setter
+    public void setJustificationDate(Date justificationDate) { this.justificationDate = justificationDate; }
     public void setReason(String reason) { this.reason = reason; }
     public void setDescription(String description) { this.description = description; }
     public void setStatus(String status) { this.status = status; }
-    public void voidsetSubmittedAt(Timestamp submittedAt) { this.submittedAt = submittedAt; } // Fix: Removed extra 'void'
+    public void setSubmittedAt(Timestamp submittedAt) { this.submittedAt = submittedAt; } // Corrected typo here
     public void setReviewedBy(String reviewedBy) { this.reviewedBy = reviewedBy; }
     public void setReviewedAt(Timestamp reviewedAt) { this.reviewedAt = reviewedAt; }
     public void setReviewComments(String reviewComments) { this.reviewComments = reviewComments; }
@@ -154,7 +153,7 @@ public class Justification {
                 "justificationId='" + justificationId + '\'' +
                 ", studentName='" + studentName + '\'' +
                 ", courseName='" + courseName + '\'' +
-                ", justificationDate=" + justificationDate + // Include in toString
+                ", justificationDate=" + justificationDate +
                 ", reason='" + reason + '\'' +
                 ", status='" + status + '\'' +
                 ", submittedAt=" + submittedAt +
