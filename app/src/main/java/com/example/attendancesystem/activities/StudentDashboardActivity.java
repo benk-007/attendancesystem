@@ -14,6 +14,8 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
+import android.content.Intent;
+import androidx.appcompat.app.AlertDialog;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
@@ -34,7 +36,8 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
     // Views
     private TextView tvWelcome, tvTodayStatus, tvAttendanceRate, tvNextCourse;
-    private CardView cardProfile, cardHistory, cardJustification, cardSchedule;
+    private CardView cardProfile, cardHistory, cardJustification, cardSchedule, cardStats, cardCourses;
+    private View btnViewPhoto;
     private ProgressBar progressBarMain;
     private CircleImageView ivProfileImage;
 
@@ -126,6 +129,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
         cardHistory = findViewById(R.id.card_history);
         cardJustification = findViewById(R.id.card_justification);
         cardSchedule = findViewById(R.id.card_schedule);
+        cardStats = findViewById(R.id.card_stats); // <-- Add this, replace with actual ID
+        cardCourses = findViewById(R.id.card_courses); // <-- Add this, replace with actual ID
+        btnViewPhoto = findViewById(R.id.btn_view_photo); // <-- Add this, replace with actual ID (e.g., R.id.iv_profile_image if it's the same)
+
 
         progressBarMain = findViewById(R.id.progress_bar_main);
         ivProfileImage = findViewById(R.id.iv_profile_image);
@@ -428,6 +435,28 @@ public class StudentDashboardActivity extends AppCompatActivity {
             }
             startActivity(intent);
         });
+        cardSchedule.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ScheduleActivity.class);
+            startActivity(intent);
+        });
+
+        // Ajouter un nouveau bouton/card pour les statistiques
+        cardStats.setOnClickListener(v -> {
+            Intent intent = new Intent(this, AttendanceStatisticsActivity.class);
+            startActivity(intent);
+        });
+
+        // Pour la photo de profil (ajouter dans ProfileActivity)
+        btnViewPhoto.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ProfilePhotoViewActivity.class);
+            startActivity(intent);
+        });
+
+        // Pour voir les cours
+        cardCourses.setOnClickListener(v -> {
+            Intent intent = new Intent(this, StudentCoursesActivity.class);
+            startActivity(intent);
+        });
 
         cardHistory.setOnClickListener(v -> {
             Intent intent = new Intent(this, AttendanceHistoryActivity.class);
@@ -450,8 +479,15 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.dashboard_menu, menu);
+
+        // Ajouter une option de déconnexion rapide si elle n'existe pas
+        if (menu.findItem(R.id.action_logout) == null) {
+            menu.add(Menu.NONE, R.id.action_logout, Menu.NONE, "Déconnexion")
+                    .setIcon(R.drawable.ic_person)
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+        }
+
         return true;
     }
 
@@ -481,23 +517,162 @@ public class StudentDashboardActivity extends AppCompatActivity {
     }
 
     private void logout() {
-        // Sign out from Firebase
-        firebaseManager.signOut();
-
-        // Clear saved user data
-        Utils.clearUserData(this);
-
-        // Navigate to login activity
-        Intent intent = new Intent(this, LoginActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+        performLogout(); // Utiliser la nouvelle méthode sécurisée
     }
+
+    private void performLogout() {
+        // Créer un dialogue de confirmation
+        new AlertDialog.Builder(this)
+                .setTitle("Déconnexion")
+                .setMessage("Êtes-vous sûr de vouloir vous déconnecter ?")
+                .setIcon(R.drawable.ic_person)
+                .setPositiveButton("Se déconnecter", (dialog, which) -> {
+                    executeLogout();
+                })
+                .setNegativeButton("Annuler", null)
+                .show();
+    }
+    /**
+     * Exécuter la déconnexion
+     */
+    private void executeLogout() {
+        try {
+            // Afficher un feedback utilisateur
+            Utils.showToast(this, "Déconnexion en cours...");
+
+            // 1. Annuler toutes les notifications en cours
+            if (notificationHelper != null) {
+                notificationHelper.cancelAllNotifications();
+            }
+
+            // 2. Nettoyer les données temporaires et cache
+            clearTemporaryData();
+
+            // 3. Se déconnecter de Firebase Auth
+            firebaseManager.signOut();
+
+            // 4. Effacer toutes les données utilisateur locales
+            Utils.clearUserData(this);
+
+            // 5. Nettoyer les préférences de session
+            clearSessionPreferences();
+
+            // 6. Rediriger vers l'écran de connexion
+            redirectToLogin();
+
+            // 7. Message de confirmation
+            Utils.showToast(this, "Déconnexion réussie");
+
+            // Log pour le debug
+            Utils.logInfo(TAG, "User logged out successfully");
+
+        } catch (Exception e) {
+            // Gestion des erreurs
+            Utils.logError(TAG, "Error during logout: " + e.getMessage());
+            Utils.showToast(this, "Erreur lors de la déconnexion");
+
+            // Forcer la redirection même en cas d'erreur
+            redirectToLogin();
+        }
+    }
+
+    /**
+     * Nettoyer les données temporaires
+     */
+    private void clearTemporaryData() {
+        try {
+            // Nettoyer les variables d'instance
+            currentStudent = null;
+
+            // Annuler les tâches en arrière-plan si nécessaire
+            // (par exemple, des handlers ou des timers)
+
+            // Nettoyer le cache des images si nécessaire
+            // Glide.get(this).clearMemory(); // Optionnel
+
+        } catch (Exception e) {
+            Utils.logError(TAG, "Error clearing temporary data: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Nettoyer les préférences de session
+     */
+    private void clearSessionPreferences() {
+        try {
+            // Nettoyer les préférences spécifiques à la session
+            Utils.setBooleanPref(this, "is_first_launch", false);
+            Utils.setLongPref(this, "last_sync_time", 0);
+
+            // Nettoyer d'autres préférences temporaires si nécessaire
+            Utils.setStringPref(this, "last_notification_id", "");
+
+        } catch (Exception e) {
+            Utils.logError(TAG, "Error clearing session preferences: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Rediriger vers l'écran de connexion
+     */
+    private void redirectToLogin() {
+        Intent intent = new Intent(this, LoginActivity.class);
+
+        // Vider la pile d'activités pour empêcher le retour
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        // Ajouter une animation de transition (optionnel)
+        startActivity(intent);
+
+        // Fermer l'activité actuelle
+        finish();
+
+        // Animation de fermeture (optionnel)
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    /**
+     * Déconnexion d'urgence sans dialogue de confirmation
+     * Utilisée en cas d'erreur critique ou de session expirée
+     */
+    public void emergencyLogout(String reason) {
+        Utils.logError(TAG, "Emergency logout triggered: " + reason);
+        Utils.showToast(this, "Session expirée. Redirection vers la connexion...");
+        executeLogout();
+    }
+
+// 5. AJOUTER cette méthode pour gérer la déconnexion automatique en cas d'inactivité
+
+    /**
+     * Vérifier l'expiration de session (à appeler dans onResume si nécessaire)
+     */
+    private void checkSessionExpiry() {
+        // Vérifier si l'utilisateur est toujours connecté dans Firebase
+        if (!firebaseManager.isUserLoggedIn()) {
+            emergencyLogout("Firebase session expired");
+            return;
+        }
+
+        // Vérifier si les données locales sont cohérentes
+        String savedEmail = Utils.getSavedUserEmail(this);
+        String currentEmail = firebaseManager.getCurrentUserEmail();
+
+        if (savedEmail == null || currentEmail == null || !savedEmail.equals(currentEmail)) {
+            emergencyLogout("Session data inconsistency");
+            return;
+        }
+    }
+
+
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh data when returning to the activity
+
+        // Vérifier l'état de la session
+        checkSessionExpiry();
+
+        // Refresh data when returning to the activity (code existant)
         if (currentStudent != null) {
             Log.d(TAG, "onResume - refreshing data");
             loadTodayAttendance();

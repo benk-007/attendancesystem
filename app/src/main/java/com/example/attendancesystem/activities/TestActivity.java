@@ -17,6 +17,7 @@ import com.example.attendancesystem.services.FirebaseManager;
 import com.example.attendancesystem.services.GoogleDriveService;
 import com.example.attendancesystem.utils.Utils;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class TestActivity extends AppCompatActivity {
@@ -97,12 +98,14 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void testCreateStudent() {
+        // Utiliser le constructeur corrigé avec field
         Student testStudent = new Student(
                 "test.student@example.com",
                 "Étudiant Test",
                 "TEST001",
                 "Informatique",
-                "L3"
+                "L3",
+                "Data Science"  // ← Ajout du champ field
         );
         testStudent.setPhoneNumber("+212600000000");
 
@@ -118,6 +121,7 @@ public class TestActivity extends AppCompatActivity {
                         addTestResult("   - Nom: " + student.getFullName());
                         addTestResult("   - Département: " + student.getDepartment());
                         addTestResult("   - Année: " + student.getYear());
+                        addTestResult("   - Filière: " + student.getField());
                     }
 
                     @Override
@@ -135,36 +139,39 @@ public class TestActivity extends AppCompatActivity {
     }
 
     private void testCreateCourse() {
+        // Utiliser le constructeur corrigé avec field et targetYears
         Course testCourse = new Course(
                 "Mathématiques Test",
                 "test.teacher@example.com",
                 "Professeur Test",
                 "Mathématiques",
-                "GL",
-                List.of("L1", "L2", "L3")
+                "Data Science",  // field
+                Arrays.asList("L1", "L2", "L3")  // targetYears
         );
 
-        // Configurer le planning
+        // Configurer le planning - CORRIGER l'appel de méthode
         Course.Schedule courseScheduleEntry = new Course.Schedule();
         courseScheduleEntry.setDayOfWeek("monday");
         courseScheduleEntry.setStartTime("08:00");
         courseScheduleEntry.setEndTime("10:00");
         courseScheduleEntry.setRoom("Salle A101");
         courseScheduleEntry.setRecurring(true);
-        testCourse.getCourseScheduleEntry(CourseScheduleEntry);
+        testCourse.setCourseScheduleEntry(courseScheduleEntry);  // ← CORRECTION
 
-        // Ajouter quelques étudiants
-        testCourse.enrollStudent("test.student@example.com");
-        testCourse.enrollStudent("student2@example.com");
-
-        // Note: Pour un vrai test, il faudrait d'abord créer le cours dans Firestore
-        // Pour l'instant, on teste juste la création de l'objet
+        // Note: Le modèle Course n'a pas de méthode enrollStudent
+        // On teste juste la création de l'objet
         addTestResult("✅ Création objet cours test: OK");
         addTestResult("   - Cours: " + testCourse.getCourseName());
         addTestResult("   - Enseignant: " + testCourse.getTeacherName());
-        addTestResult("   - Étudiants inscrits: " + testCourse.getEnrolledStudentsCount());
-        addTestResult("   - Horaire: " + testCourse.getSchedule().getDayOfWeek() + " " +
-                testCourse.getSchedule().getStartTime() + "-" + testCourse.getSchedule().getEndTime());
+        addTestResult("   - Département: " + testCourse.getDepartment());
+        addTestResult("   - Filière: " + testCourse.getField());
+        addTestResult("   - Années cibles: " + testCourse.getTargetYears().toString());
+
+        if (testCourse.getCourseScheduleEntry() != null) {
+            Course.Schedule schedule = testCourse.getCourseScheduleEntry();
+            addTestResult("   - Horaire: " + schedule.getDayOfWeek() + " " +
+                    schedule.getStartTime() + "-" + schedule.getEndTime() + " (" + schedule.getRoom() + ")");
+        }
     }
 
     private void testCreateAttendance() {
@@ -183,6 +190,7 @@ public class TestActivity extends AppCompatActivity {
         addTestResult("   - Statut: " + testAttendance.getStatusDisplayName());
         addTestResult("   - Confiance: " + Utils.formatConfidenceScore(testAttendance.getConfidence()));
         addTestResult("   - Heure: " + Utils.formatDateTime(testAttendance.getTimestamp()));
+        addTestResult("   - Entrée manuelle: " + (testAttendance.isManualEntry() ? "OUI" : "NON"));
     }
 
     private void testGoogleDrive() {
@@ -247,16 +255,18 @@ public class TestActivity extends AppCompatActivity {
 
     private void testStudentModel() {
         try {
-            Student student = new Student("student@test.com", "John Doe", "STU001", "Informatique", "L2");
+            // CORRIGER: Utiliser le constructeur avec field
+            Student student = new Student("student@test.com", "John Doe", "STU001", "Informatique", "L2", "Data Science");
             student.setPhoneNumber("+212600000000");
 
             // Test toMap()
             var map = student.toMap();
             boolean hasRequiredFields = map.containsKey("email") && map.containsKey("fullName") &&
-                    map.containsKey("studentId") && map.containsKey("department");
+                    map.containsKey("studentId") && map.containsKey("department") && map.containsKey("field");
 
             addTestResult("✅ Modèle Student: " + (hasRequiredFields ? "OK" : "ERREUR"));
             addTestResult("   - Email: " + student.getEmail());
+            addTestResult("   - Filière: " + student.getField());
             addTestResult("   - Champs requis: " + (hasRequiredFields ? "Présents" : "Manquants"));
 
         } catch (Exception e) {
@@ -273,6 +283,8 @@ public class TestActivity extends AppCompatActivity {
                     map.containsKey("employeeId") && map.containsKey("department");
 
             addTestResult("✅ Modèle Teacher: " + (hasRequiredFields ? "OK" : "ERREUR"));
+            addTestResult("   - Email: " + teacher.getEmail());
+            addTestResult("   - ID Employé: " + teacher.getEmployeeId());
 
         } catch (Exception e) {
             addTestResult("❌ Modèle Teacher: ERREUR - " + e.getMessage());
@@ -288,6 +300,8 @@ public class TestActivity extends AppCompatActivity {
                     map.containsKey("adminId") && map.containsKey("department");
 
             addTestResult("✅ Modèle Admin: " + (hasRequiredFields ? "OK" : "ERREUR"));
+            addTestResult("   - Email: " + admin.getEmail());
+            addTestResult("   - ID Admin: " + admin.getAdminId());
 
         } catch (Exception e) {
             addTestResult("❌ Modèle Admin: ERREUR - " + e.getMessage());
@@ -296,16 +310,20 @@ public class TestActivity extends AppCompatActivity {
 
     private void testCourseModel() {
         try {
-            Course course = new Course("Test Course", "teacher@test.com", "Prof Test", "Informatique");
-            course.enrollStudent("student1@test.com");
-            course.enrollStudent("student2@test.com");
+            // CORRIGER: Utiliser le constructeur avec field et targetYears
+            Course course = new Course("Test Course", "teacher@test.com", "Prof Test", "Informatique", "Software Engineering", Arrays.asList("L1", "L2"));
 
-            boolean enrollmentWorks = course.isStudentEnrolled("student1@test.com");
-            boolean countCorrect = course.getEnrolledStudentsCount() == 2;
+            // Test des propriétés
+            boolean hasValidData = course.getCourseName() != null &&
+                    course.getTeacherEmail() != null &&
+                    course.getField() != null &&
+                    course.getTargetYears() != null;
 
-            addTestResult("✅ Modèle Course: " + (enrollmentWorks && countCorrect ? "OK" : "ERREUR"));
-            addTestResult("   - Inscription étudiant: " + (enrollmentWorks ? "OK" : "ERREUR"));
-            addTestResult("   - Comptage étudiants: " + (countCorrect ? "OK" : "ERREUR"));
+            addTestResult("✅ Modèle Course: " + (hasValidData ? "OK" : "ERREUR"));
+            addTestResult("   - Cours: " + course.getCourseName());
+            addTestResult("   - Enseignant: " + course.getTeacherName());
+            addTestResult("   - Filière: " + course.getField());
+            addTestResult("   - Années cibles: " + course.getTargetYears().size());
 
         } catch (Exception e) {
             addTestResult("❌ Modèle Course: ERREUR - " + e.getMessage());
@@ -324,6 +342,7 @@ public class TestActivity extends AppCompatActivity {
             addTestResult("✅ Modèle Attendance: " + (isPresent && map.size() > 5 ? "OK" : "ERREUR"));
             addTestResult("   - Statut: " + displayName);
             addTestResult("   - Est présent: " + isPresent);
+            addTestResult("   - Champs dans Map: " + map.size());
 
         } catch (Exception e) {
             addTestResult("❌ Modèle Attendance: ERREUR - " + e.getMessage());
@@ -344,14 +363,26 @@ public class TestActivity extends AppCompatActivity {
             String firstName = Utils.getFirstName("John Doe Smith");
             String lastName = Utils.getLastName("John Doe Smith");
 
+            // Test validation field
+            boolean validField = Utils.isValidField("Data Science");
+            boolean invalidField = !Utils.isValidField("");
+
+            // Test validation password
+            boolean validPassword = Utils.isValidPassword("password123");
+            boolean invalidPassword = !Utils.isValidPassword("123");
+
             boolean allTestsPass = validEmail && invalidEmail &&
                     currentTime != null && today != null &&
-                    "John".equals(firstName) && "Doe Smith".equals(lastName);
+                    "John".equals(firstName) && "Doe Smith".equals(lastName) &&
+                    validField && invalidField &&
+                    validPassword && invalidPassword;
 
             addTestResult("✅ Classe Utils: " + (allTestsPass ? "OK" : "ERREUR"));
             addTestResult("   - Validation email: " + (validEmail && invalidEmail ? "OK" : "ERREUR"));
             addTestResult("   - Formatage date: " + (currentTime != null && today != null ? "OK" : "ERREUR"));
             addTestResult("   - Extraction noms: " + ("John".equals(firstName) && "Doe Smith".equals(lastName) ? "OK" : "ERREUR"));
+            addTestResult("   - Validation field: " + (validField && invalidField ? "OK" : "ERREUR"));
+            addTestResult("   - Validation password: " + (validPassword && invalidPassword ? "OK" : "ERREUR"));
 
         } catch (Exception e) {
             addTestResult("❌ Classe Utils: ERREUR - " + e.getMessage());

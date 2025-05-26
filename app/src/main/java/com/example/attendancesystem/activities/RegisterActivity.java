@@ -321,7 +321,7 @@ public class RegisterActivity extends AppCompatActivity {
 
         // Rediriger vers la capture de photo de profil (seulement pour les étudiants car ils ont besoin de reconnaissance faciale)
         if ("student".equals(role)) {
-            Intent intent = new Intent(RegisterActivity.this, ProfilePhotoActivity.class);
+            Intent intent = new Intent(RegisterActivity.this, ProfilePhotoViewActivity.class);
             intent.putExtra("isFirstTime", true);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);

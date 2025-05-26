@@ -5,10 +5,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- AJOUTER ces permissions avant <application> -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-    <!-- AJOUTER ces permissions avant <application> -->
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission
@@ -32,9 +31,16 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".activities.ScheduleActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem"/>
+        <activity
+            android:name=".activities.AttendanceStatisticsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem"/>
+        <activity
             android:name=".activities.AdminJustificationActivity"
-            android:exported="false" />
-        <!-- Activities that use custom toolbar (NoActionBar theme) -->
+            android:exported="false" /> <!-- Activities that use custom toolbar (NoActionBar theme) -->
         <activity
             android:name=".activities.SessionManagementActivity"
             android:exported="false"
@@ -86,11 +92,15 @@
             android:exported="false"
             android:theme="@style/Theme.FaceAttendanceSystem" />
         <activity
-            android:name=".activities.ProfilePhotoActivity"
+            android:name=".activities.ProfilePhotoViewActivity"
             android:exported="false"
             android:theme="@style/Theme.FaceAttendanceSystem.ActionBar" />
         <activity
             android:name=".activities.TestActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FaceAttendanceSystem" />
+        <activity
+            android:name=".activities.StudentCoursesActivity"
             android:exported="false"
             android:theme="@style/Theme.FaceAttendanceSystem" />
     </application>

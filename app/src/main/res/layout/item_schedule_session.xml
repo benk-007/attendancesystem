@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="3dp"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp">
+
+        <!-- Indicateur de statut -->
+        <View
+            android:id="@+id/status_indicator_schedule"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="12dp"
+            android:background="@color/primary_color" />
+
+        <!-- Contenu principal -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- En-tête avec cours et statut -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:id="@+id/tv_course_name_schedule"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Mathématiques Avancées"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    tools:text="Mathématiques Avancées" />
+
+                <TextView
+                    android:id="@+id/tv_status_schedule"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Programmé"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/rounded_background"
+                    android:backgroundTint="@color/primary_color"
+                    android:textColor="@color/white"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="3dp"
+                    android:layout_marginStart="8dp"
+                    tools:text="Programmé" />
+
+            </LinearLayout>
+
+            <!-- Enseignant -->
+            <TextView
+                android:id="@+id/tv_teacher_name_schedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Prof. Mohammed Alami"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:layout_marginBottom="6dp"
+                android:drawableStart="@drawable/ic_person"
+                android:drawablePadding="6dp"
+                android:drawableTint="@color/text_secondary"
+                android:gravity="center_vertical"
+                tools:text="Prof. Mohammed Alami" />
+
+            <!-- Horaire et salle -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:id="@+id/tv_time_schedule"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="08:00 - 10:00"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:drawableStart="@drawable/ic_calendar"
+                    android:drawablePadding="6dp"
+                    android:drawableTint="@color/primary_color"
+                    android:gravity="center_vertical"
+                    tools:text="08:00 - 10:00" />
+
+                <TextView
+                    android:id="@+id/tv_room_schedule"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Amphi A"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp"
+                    android:background="@drawable/rounded_background"
+                    android:backgroundTint="@color/accent_color"
+                    android:backgroundTintMode="multiply"
+                    android:alpha="0.15"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:drawableStart="@drawable/ic_badge"
+                    android:drawablePadding="4dp"
+                    android:drawableTint="@color/accent_color"
+                    android:gravity="center_vertical"
+                    tools:text="Amphi A" />
+
+            </LinearLayout>
+
+            <!-- Informations supplémentaires (département/filière) -->
+            <TextView
+                android:id="@+id/tv_day_info_schedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Data Science • Informatique"
+                android:textColor="@color/text_hint"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="visible"
+                tools:text="Data Science • Informatique" />
+
+        </LinearLayout>
+
+        <!-- Actions rapides (optionnel) -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginStart="8dp">
+
+            <ImageView
+                android:id="@+id/iv_session_action"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_info"
+                android:tint="@color/text_hint"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
+                android:focusable="true"
+                android:padding="2dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

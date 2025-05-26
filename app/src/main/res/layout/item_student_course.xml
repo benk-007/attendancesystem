@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp"
+    android:foreground="?android:attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Course Icon -->
+        <ImageView
+            android:id="@+id/iv_course_icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="16dp"
+            android:src="@drawable/ic_badge"
+            android:tint="@color/primary_color"
+            android:background="@drawable/circle_background"
+            android:padding="12dp" />
+
+        <!-- Course Content -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Course Name and Info Icon -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="4dp">
+
+                <TextView
+                    android:id="@+id/tv_course_name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Mathématiques"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    tools:text="Algorithmes et Structures de Données" />
+
+                <ImageView
+                    android:id="@+id/iv_info_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_info"
+                    android:tint="@color/text_hint"
+                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="2dp" />
+
+            </LinearLayout>
+
+            <!-- Course Code -->
+            <TextView
+                android:id="@+id/tv_course_code"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="ID: MATH101"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:layout_marginBottom="6dp"
+                android:background="@color/primary_color_light"
+                android:padding="4dp"
+                android:fontFamily="monospace"
+                tools:text="ID: INFO301" />
+
+            <!-- Teacher Name -->
+            <TextView
+                android:id="@+id/tv_teacher_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="👨‍🏫 Prof. Martin Dupont"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:layout_marginBottom="4dp"
+                android:visibility="visible"
+                tools:text="👨‍🏫 Prof. Sarah Johnson" />
+
+            <!-- Department -->
+            <TextView
+                android:id="@+id/tv_department"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🏢 Informatique"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:layout_marginBottom="4dp"
+                android:visibility="visible"
+                tools:text="🏢 Département d'Informatique" />
+
+            <!-- Schedule -->
+            <TextView
+                android:id="@+id/tv_schedule"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="🕒 Lundi 08:00-10:00 (Amphi A)"
+                android:textColor="@color/accent_color"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="visible"
+                tools:text="🕒 Mercredi 14:00-16:00 (Salle B201)" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

@@ -1,13 +1,11 @@
 package com.example.attendancesystem.activities;
 
-import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -16,7 +14,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.cardview.widget.CardView;
 
 import com.example.attendancesystem.R;
 import com.example.attendancesystem.models.Student;
@@ -30,10 +27,6 @@ import com.google.firebase.Timestamp;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import de.hdodenhof.circleimageview.CircleImageView;
-import android.widget.LinearLayout;
-
-import java.util.Arrays;
-import java.util.List;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -552,7 +545,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void changeProfilePhoto() {
         // Navigate to ProfilePhotoActivity
-        Intent intent = new Intent(this, ProfilePhotoActivity.class);
+        Intent intent = new Intent(this, ProfilePhotoViewActivity.class);
         intent.putExtra("isFirstTime", false);
         startActivity(intent);
     }
