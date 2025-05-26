@@ -27,6 +27,11 @@ import com.example.attendancesystem.services.FirebaseManager;
 import com.example.attendancesystem.utils.Utils;
 import com.google.firebase.Timestamp;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
+import de.hdodenhof.circleimageview.CircleImageView;
+import android.widget.LinearLayout;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,9 +40,9 @@ public class ProfileActivity extends AppCompatActivity {
     private static final String TAG = "ProfileActivity";
 
     // Views
-    private ImageView ivProfilePhoto;
-    private TextView tvUserName, tvUserEmail, tvDepartment, tvYear, tvUserId, tvPhone;
-    private LinearLayout layoutYear;
+    private CircleImageView ivProfilePhoto;
+    private TextView tvUserName, tvUserEmail, tvDepartment, tvYear, tvUserId, tvPhone, tvField; // ← AJOUTER tvField
+    private LinearLayout layoutYear, layoutField; // ← AJOUTER layoutField
     private Button btnChangePhoto, btnEditProfile, btnChangePassword;
     private Switch switchAttendanceAlerts, switchCourseReminders, switchAbsenceAlerts;
     private ProgressBar progressBar;
@@ -85,7 +90,9 @@ public class ProfileActivity extends AppCompatActivity {
         tvYear = findViewById(R.id.tv_year);
         tvUserId = findViewById(R.id.tv_user_id);
         tvPhone = findViewById(R.id.tv_phone);
+        tvField = findViewById(R.id.tv_field);  // ← AJOUTER cette ligne
         layoutYear = findViewById(R.id.layout_year);
+        layoutField = findViewById(R.id.layout_field);  // ← AJOUTER cette ligne
         btnChangePhoto = findViewById(R.id.btn_change_photo);
         btnEditProfile = findViewById(R.id.btn_edit_profile);
         btnChangePassword = findViewById(R.id.btn_change_password);
@@ -190,7 +197,13 @@ public class ProfileActivity extends AppCompatActivity {
             tvYear.setText(student.getYear());
             tvUserId.setText(student.getStudentId());
             tvPhone.setText(student.getPhoneNumber() != null ? student.getPhoneNumber() : "Non renseigné");
+            // AJOUTER ces lignes pour le champ field
+            tvField.setText(student.getField() != null ? student.getField() : "Non défini");
             layoutYear.setVisibility(View.VISIBLE);
+            layoutField.setVisibility(View.VISIBLE);
+
+            // AJOUTER la gestion de la photo de profil
+            loadProfileImage(student.getProfileImageUrl());
 
             // Update notification preferences
             updateNotificationSwitches(student.getNotificationPreferences());
@@ -202,7 +215,12 @@ public class ProfileActivity extends AppCompatActivity {
             tvDepartment.setText(teacher.getDepartment());
             tvUserId.setText(teacher.getEmployeeId());
             tvPhone.setText(teacher.getPhoneNumber() != null ? teacher.getPhoneNumber() : "Non renseigné");
+
             layoutYear.setVisibility(View.GONE);
+            layoutField.setVisibility(View.GONE);  // ← AJOUTER cette ligne
+
+            // AJOUTER la gestion de la photo de profil
+            loadProfileImage(teacher.getProfileImageUrl());
 
             // Update notification preferences
             updateNotificationSwitches(teacher.getNotificationPreferences());
@@ -215,9 +233,27 @@ public class ProfileActivity extends AppCompatActivity {
             tvUserId.setText(admin.getAdminId());
             tvPhone.setText(admin.getPhoneNumber() != null ? admin.getPhoneNumber() : "Non renseigné");
             layoutYear.setVisibility(View.GONE);
+            layoutField.setVisibility(View.GONE);  // ← AJOUTER cette ligne
+
+            // AJOUTER la gestion de la photo de profil
+            loadProfileImage(admin.getProfileImageUrl());
 
             // Update notification preferences
             updateNotificationSwitches(admin.getNotificationPreferences());
+        }
+    }
+
+    // 5. AJOUTER cette nouvelle méthode pour charger la photo de profil
+    private void loadProfileImage(String imageUrl) {
+        if (imageUrl != null && !imageUrl.isEmpty()) {
+            Glide.with(this)
+                    .load(imageUrl)
+                    .transform(new CircleCrop())
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(ivProfilePhoto);
+        } else {
+            ivProfilePhoto.setImageResource(R.drawable.ic_person);
         }
     }
 
@@ -326,9 +362,11 @@ public class ProfileActivity extends AppCompatActivity {
         // Initialize dialog views
         EditText etFullName = dialogView.findViewById(R.id.et_full_name);
         EditText etPhoneNumber = dialogView.findViewById(R.id.et_phone_number);
+        EditText etField = dialogView.findViewById(R.id.et_field);  // ← AJOUTER cette ligne
         Spinner spinnerDepartment = dialogView.findViewById(R.id.spinner_department);
         Spinner spinnerYear = dialogView.findViewById(R.id.spinner_year);
         LinearLayout layoutYearDialog = dialogView.findViewById(R.id.layout_year_dialog);
+        LinearLayout layoutFieldDialog = dialogView.findViewById(R.id.layout_field_dialog);  // ← AJOUTER cette ligne
 
         // Setup department spinner
         String[] departments = getResources().getStringArray(R.array.departments);
@@ -347,6 +385,7 @@ public class ProfileActivity extends AppCompatActivity {
             Student student = (Student) currentUser;
             etFullName.setText(student.getFullName());
             etPhoneNumber.setText(student.getPhoneNumber());
+            etField.setText(student.getField());  // ← AJOUTER cette ligne
 
             // Set selected department
             String currentDept = student.getDepartment();
@@ -367,6 +406,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
 
             layoutYearDialog.setVisibility(View.VISIBLE);
+            layoutFieldDialog.setVisibility(View.VISIBLE);  // ← AJOUTER cette ligne
 
         } else if (currentUser instanceof Teacher) {
             Teacher teacher = (Teacher) currentUser;
@@ -382,6 +422,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
 
             layoutYearDialog.setVisibility(View.GONE);
+            layoutFieldDialog.setVisibility(View.GONE);  // ← AJOUTER cette ligne
 
         } else if (currentUser instanceof Admin) {
             Admin admin = (Admin) currentUser;
@@ -397,6 +438,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
 
             layoutYearDialog.setVisibility(View.GONE);
+            layoutFieldDialog.setVisibility(View.GONE);  // ← AJOUTER cette ligne
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -407,7 +449,9 @@ public class ProfileActivity extends AppCompatActivity {
                             etPhoneNumber.getText().toString().trim(),
                             spinnerDepartment.getSelectedItem().toString(),
                             layoutYearDialog.getVisibility() == View.VISIBLE ?
-                                    spinnerYear.getSelectedItem().toString() : null);
+                                    spinnerYear.getSelectedItem().toString() : null,
+                            layoutFieldDialog.getVisibility() == View.VISIBLE ?  // ← AJOUTER ce paramètre
+                                    etField.getText().toString().trim() : null);
                 })
                 .setNegativeButton("Annuler", null)
                 .create();
@@ -415,7 +459,7 @@ public class ProfileActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void saveProfileChanges(String fullName, String phoneNumber, String department, String year) {
+    private void saveProfileChanges(String fullName, String phoneNumber, String department, String year, String field) {
         if (fullName.isEmpty()) {
             Utils.showToast(this, "Le nom complet est requis");
             return;
@@ -430,6 +474,9 @@ public class ProfileActivity extends AppCompatActivity {
             student.setDepartment(department);
             if (year != null) {
                 student.setYear(year);
+            }
+            if (field != null) {  // ← AJOUTER cette condition
+                student.setField(field);
             }
             student.setLastUpdatedAt(Timestamp.now());
 

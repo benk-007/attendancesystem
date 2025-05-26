@@ -1,83 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="16dp">
 
-    <!-- Full Name -->
-    <com.google.android.material.textfield.TextInputLayout
-        style="@style/EditTextStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:hint="Nom complet *"
-        app:startIconDrawable="@drawable/ic_person">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_full_name"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="textPersonName|textCapWords" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Phone Number -->
-    <com.google.android.material.textfield.TextInputLayout
-        style="@style/EditTextStyle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:hint="Numéro de téléphone"
-        app:startIconDrawable="@drawable/ic_phone">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/et_phone_number"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:inputType="phone" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <!-- Department -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Département *"
-        android:textColor="@color/text_secondary"
-        android:textSize="12sp"
-        android:layout_marginBottom="8dp" />
-
-    <Spinner
-        android:id="@+id/spinner_department"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginBottom="16dp"
-        android:background="@drawable/spinner_background" />
-
-    <!-- Year (only for students) -->
     <LinearLayout
-        android:id="@+id/layout_year_dialog"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone">
+        android:orientation="vertical">
 
-        <TextView
+        <!-- Nom complet -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_full_name"
+            style="@style/EditTextStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Année d'étude"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="16dp"
+            android:hint="Nom complet *"
+            app:startIconDrawable="@drawable/ic_person">
 
-        <Spinner
-            android:id="@+id/spinner_year"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_full_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPersonName|textCapWords" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Téléphone -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_phone_number"
+            style="@style/EditTextStyle"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="@drawable/spinner_background" />
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Numéro de téléphone"
+            app:startIconDrawable="@drawable/ic_phone">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_phone_number"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="phone" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Département -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_department"
+            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:hint="Département *">
+
+            <Spinner
+                android:id="@+id/spinner_department"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- Filière (visible seulement pour les étudiants) -->
+        <LinearLayout
+            android:id="@+id/layout_field_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_field"
+                style="@style/EditTextStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Filière"
+                app:startIconDrawable="@drawable/ic_badge">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_field"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
+
+        <!-- Année (visible seulement pour les étudiants) -->
+        <LinearLayout
+            android:id="@+id/layout_year_dialog"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/til_year"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="Année d'étude">
+
+                <Spinner
+                    android:id="@+id/spinner_year"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+        </LinearLayout>
 
     </LinearLayout>
 
-</LinearLayout>
+</ScrollView>

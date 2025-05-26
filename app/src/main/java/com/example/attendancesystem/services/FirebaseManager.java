@@ -1059,20 +1059,18 @@ public class FirebaseManager {
     // This method needs to be implemented to fetch courses associated with the student
     // based on department, field, and year.
     public void getStudentCourses(String studentEmail, String department, String field, String year, DataCallback<List<Map<String, String>>> callback) {
+        // AJOUTER la vérification du champ field
         db.collection("courses")
                 .whereEqualTo("department", department)
-                .whereEqualTo("field", field)
-                .whereArrayContains("targetYears", year) // Query if the student's year is in the course's targetYears
-                // Optional: You might also want to combine with enrolledStudentEmails if that's still a hard requirement
-                // .whereArrayContains("enrolledStudentEmails", studentEmail)
+                .whereEqualTo("field", field)  // ← LIGNE AJOUTÉE
+                .whereArrayContains("targetYears", year)  // ← MODIFIER de whereEqualTo vers whereArrayContains
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Map<String, String>> courses = new ArrayList<>();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         Map<String, String> course = new HashMap<>();
                         course.put("id", document.getId());
-                        course.put("name", document.getString("courseName")); // Use "courseName"
-                        // Add other relevant course data if needed
+                        course.put("name", document.getString("courseName"));  // ← MODIFIER de "name" vers "courseName"
                         courses.add(course);
                     }
                     callback.onSuccess(courses);

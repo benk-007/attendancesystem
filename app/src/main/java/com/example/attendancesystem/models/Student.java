@@ -6,7 +6,6 @@ import java.util.Map;
 
 public class Student {
     private String email; // Identifiant unique
-    // NEW fields for field-based architecture
     private String field; // "Data Science", "Software Engineering", "Cybersecurity", etc.
     private String fullName;
     private String studentId;
@@ -25,27 +24,23 @@ public class Student {
         this.notificationPreferences = new NotificationPreferences();
     }
 
-
-
+    // Constructeur principal corrigé avec field
     public Student(String email, String fullName, String studentId, String department, String year, String field) {
         this.email = email;
         this.fullName = fullName;
         this.studentId = studentId;
         this.department = department;
         this.year = year;
-        this.field = field; // NEW
+        this.field = field; // Champ corrigé
         this.isActive = true;
         this.createdAt = Timestamp.now();
         this.lastUpdatedAt = Timestamp.now();
         this.notificationPreferences = new NotificationPreferences();
     }
 
-    public Student(String email, String fullName, String idNumber, String department, String year) {
-        this.email = email;
-        this.fullName = fullName;
-        this.studentId = idNumber;
-        this.department = department;
-        this.year = year;
+    // Constructeur de compatibilité (à supprimer progressivement)
+    public Student(String email, String fullName, String studentId, String department, String year) {
+        this(email, fullName, studentId, department, year, "Non défini");
     }
 
     // Méthode pour convertir en Map pour Firebase
@@ -60,7 +55,7 @@ public class Student {
         map.put("phoneNumber", phoneNumber);
         map.put("department", department);
         map.put("year", year);
-        map.put("field", field); // NEW
+        map.put("field", field); // Champ ajouté
         if (notificationPreferences != null) {
             map.put("notificationPreferences", notificationPreferences.toMap());
         }
@@ -69,12 +64,11 @@ public class Student {
         return map;
     }
 
-
-    // Add getter and setter:
+    // Getters et Setters (champ field ajouté)
     public String getField() { return field; }
     public void setField(String field) { this.field = field; }
 
-    // Getters
+    // Autres getters et setters existants...
     public String getEmail() { return email; }
     public String getFullName() { return fullName; }
     public String getStudentId() { return studentId; }
@@ -112,6 +106,7 @@ public class Student {
                 ", studentId='" + studentId + '\'' +
                 ", department='" + department + '\'' +
                 ", year='" + year + '\'' +
+                ", field='" + field + '\'' +
                 '}';
     }
 }

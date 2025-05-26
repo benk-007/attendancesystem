@@ -1,11 +1,18 @@
 package com.example.attendancesystem.utils;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import com.example.attendancesystem.R;
 import com.google.firebase.Timestamp;
 
 import java.text.SimpleDateFormat;
@@ -369,5 +376,276 @@ public class Utils {
             case "justified": return android.R.color.holo_purple;
             default: return android.R.color.darker_gray;
         }
+    }
+
+    // AJOUTER ces méthodes à la fin de la classe Utils.java
+
+    /**
+     * Logger d'erreur centralisé
+     */
+    public static void logError(String tag, String message) {
+        android.util.Log.e(tag, message);
+        // TODO: Optionnel - envoyer vers un service de logging (Crashlytics, etc.)
+    }
+
+    /**
+     * Logger d'information
+     */
+    public static void logInfo(String tag, String message) {
+        android.util.Log.i(tag, message);
+    }
+
+    /**
+     * Valider un champ filière
+     */
+    public static boolean isValidField(String field) {
+        if (field == null || field.trim().isEmpty()) {
+            return false;
+        }
+        String trimmedField = field.trim();
+        return trimmedField.length() >= 2 && trimmedField.length() <= 50;
+    }
+
+    /**
+     * Formatter un pourcentage
+     */
+    public static String formatPercentage(double value) {
+        return String.format(java.util.Locale.getDefault(), "%.1f%%", value);
+    }
+
+    /**
+     * Calculer le taux de présence
+     */
+    public static double calculateAttendanceRate(int presentCount, int totalSessions) {
+        if (totalSessions == 0) return 0.0;
+        return (double) presentCount / totalSessions * 100;
+    }
+
+    /**
+     * Vérifier si une date est aujourd'hui
+     */
+    public static boolean isToday(Date date) {
+        if (date == null) return false;
+
+        java.util.Calendar today = java.util.Calendar.getInstance();
+        java.util.Calendar checkDate = java.util.Calendar.getInstance();
+        checkDate.setTime(date);
+
+        return today.get(java.util.Calendar.YEAR) == checkDate.get(java.util.Calendar.YEAR) &&
+                today.get(java.util.Calendar.DAY_OF_YEAR) == checkDate.get(java.util.Calendar.DAY_OF_YEAR);
+    }
+
+    /**
+     * Obtenir un nom de fichier sécurisé
+     */
+    public static String getSafeFileName(String input) {
+        if (input == null || input.trim().isEmpty()) {
+            return "unnamed";
+        }
+
+        // Remplacer les caractères non autorisés
+        return input.trim()
+                .replaceAll("[^a-zA-Z0-9._-]", "_")
+                .replaceAll("_{2,}", "_");
+    }
+
+    /**
+     * Convertir une timestamp en format lisible
+     */
+    public static String getTimeAgo(com.google.firebase.Timestamp timestamp) {
+        if (timestamp == null) return "Inconnu";
+
+        long currentTime = System.currentTimeMillis();
+        long timestampMs = timestamp.toDate().getTime();
+        long diff = currentTime - timestampMs;
+
+        long seconds = diff / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        long days = hours / 24;
+
+        if (days > 0) {
+            return days == 1 ? "Il y a 1 jour" : "Il y a " + days + " jours";
+        } else if (hours > 0) {
+            return hours == 1 ? "Il y a 1 heure" : "Il y a " + hours + " heures";
+        } else if (minutes > 0) {
+            return minutes == 1 ? "Il y a 1 minute" : "Il y a " + minutes + " minutes";
+        } else {
+            return "À l'instant";
+        }
+    }
+
+    /**
+     * Vérifier si l'application a les permissions de notification
+     */
+    public static boolean hasNotificationPermission(Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return ContextCompat.checkSelfPermission(context,
+                    android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+        }
+        return true; // Pas besoin de permission avant Android 13
+    }
+
+    /**
+     * Demander la permission de notification
+     */
+    public static void requestNotificationPermission(Activity activity, int requestCode) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(activity,
+                    new String[]{android.Manifest.permission.POST_NOTIFICATIONS},
+                    requestCode);
+        }
+    }
+
+    /**
+     * Vérifier la force du mot de passe (version avancée)
+     */
+    public static int getPasswordStrength(String password) {
+        if (password == null || password.isEmpty()) return 0;
+
+        int score = 0;
+
+        // Longueur
+        if (password.length() >= 8) score++;
+        if (password.length() >= 12) score++;
+
+        // Contient des minuscules
+        if (password.matches(".*[a-z].*")) score++;
+
+        // Contient des majuscules
+        if (password.matches(".*[A-Z].*")) score++;
+
+        // Contient des chiffres
+        if (password.matches(".*[0-9].*")) score++;
+
+        // Contient des caractères spéciaux
+        if (password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?].*")) score++;
+
+        return Math.min(score, 5); // Score sur 5
+    }
+
+    /**
+     * Obtenir le texte de force du mot de passe
+     */
+    public static String getPasswordStrengthText(int strength) {
+        switch (strength) {
+            case 0:
+            case 1: return "Très faible";
+            case 2: return "Faible";
+            case 3: return "Moyen";
+            case 4: return "Fort";
+            case 5: return "Très fort";
+            default: return "Inconnu";
+        }
+    }
+
+    /**
+     * Obtenir la couleur associée à la force du mot de passe
+     */
+    public static int getPasswordStrengthColor(int strength) {
+        switch (strength) {
+            case 0:
+            case 1: return android.R.color.holo_red_dark;
+            case 2: return R.color.warning_color;
+            case 3: return R.color.info_color;
+            case 4:
+            case 5: return R.color.success_color;
+            default: return R.color.text_secondary;
+        }
+    }
+
+    // AJOUTER ces méthodes à Utils.java pour la gestion des préférences
+
+    /**
+     * Sauvegarder une préférence booléenne
+     */
+    public static void setBooleanPref(Context context, String key, boolean value) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(key, value);
+        editor.apply();
+    }
+
+    /**
+     * Récupérer une préférence booléenne
+     */
+    public static boolean getBooleanPref(Context context, String key, boolean defaultValue) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getBoolean(key, defaultValue);
+    }
+
+    /**
+     * Sauvegarder une préférence string
+     */
+    public static void setStringPref(Context context, String key, String value) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString(key, value);
+        editor.apply();
+    }
+
+    /**
+     * Récupérer une préférence string
+     */
+    public static String getStringPref(Context context, String key, String defaultValue) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getString(key, defaultValue);
+    }
+
+    /**
+     * Sauvegarder une préférence long (pour timestamps)
+     */
+    public static void setLongPref(Context context, String key, long value) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong(key, value);
+        editor.apply();
+    }
+
+    /**
+     * Récupérer une préférence long
+     */
+    public static long getLongPref(Context context, String key, long defaultValue) {
+        SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        return prefs.getLong(key, defaultValue);
+    }
+
+    /**
+     * Vérifier si c'est la première ouverture de l'app
+     */
+    public static boolean isFirstLaunch(Context context) {
+        return getBooleanPref(context, "is_first_launch", true);
+    }
+
+    /**
+     * Marquer que l'app a été lancée
+     */
+    public static void setFirstLaunchDone(Context context) {
+        setBooleanPref(context, "is_first_launch", false);
+    }
+
+    /**
+     * Sauvegarder le timestamp de dernière synchronisation
+     */
+    public static void setLastSyncTime(Context context, long timestamp) {
+        setLongPref(context, "last_sync_time", timestamp);
+    }
+
+    /**
+     * Récupérer le timestamp de dernière synchronisation
+     */
+    public static long getLastSyncTime(Context context) {
+        return getLongPref(context, "last_sync_time", 0);
+    }
+
+    /**
+     * Vérifier si une synchronisation est nécessaire (plus de 5 minutes)
+     */
+    public static boolean needsSync(Context context) {
+        long lastSync = getLastSyncTime(context);
+        long currentTime = System.currentTimeMillis();
+        long fiveMinutes = 5 * 60 * 1000;
+
+        return (currentTime - lastSync) > fiveMinutes;
     }
 }

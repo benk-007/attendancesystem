@@ -116,6 +116,26 @@
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Filière (visible seulement pour les étudiants) -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/til_field"
+            style="@style/EditTextStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:hint="Filière *"
+            app:startIconDrawable="@drawable/ic_badge"
+            app:layout_constraintTop_toBottomOf="@id/til_department">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/et_field"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:hint="Ex: Data Science, Software Engineering..." />
+
+        </com.google.android.material.textfield.TextInputLayout>
+
         <!-- Year Spinner (for students) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_year"
@@ -124,7 +144,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:hint="Année d'étude"
-            app:layout_constraintTop_toBottomOf="@id/til_department">
+            app:layout_constraintTop_toBottomOf="@id/til_field">
 
             <Spinner
                 android:id="@+id/spinner_year"

@@ -17,6 +17,8 @@ import com.example.attendancesystem.services.FirebaseManager;
 import com.example.attendancesystem.services.GoogleDriveService;
 import com.example.attendancesystem.utils.Utils;
 
+import java.util.List;
+
 public class TestActivity extends AppCompatActivity {
 
     private static final String TAG = "TestActivity";
@@ -137,17 +139,19 @@ public class TestActivity extends AppCompatActivity {
                 "Mathématiques Test",
                 "test.teacher@example.com",
                 "Professeur Test",
-                "Mathématiques"
+                "Mathématiques",
+                "GL",
+                List.of("L1", "L2", "L3")
         );
 
         // Configurer le planning
-        Course.Schedule schedule = new Course.Schedule();
-        schedule.setDayOfWeek("monday");
-        schedule.setStartTime("08:00");
-        schedule.setEndTime("10:00");
-        schedule.setRoom("Salle A101");
-        schedule.setRecurring(true);
-        testCourse.setSchedule(schedule);
+        Course.Schedule courseScheduleEntry = new Course.Schedule();
+        courseScheduleEntry.setDayOfWeek("monday");
+        courseScheduleEntry.setStartTime("08:00");
+        courseScheduleEntry.setEndTime("10:00");
+        courseScheduleEntry.setRoom("Salle A101");
+        courseScheduleEntry.setRecurring(true);
+        testCourse.getCourseScheduleEntry(CourseScheduleEntry);
 
         // Ajouter quelques étudiants
         testCourse.enrollStudent("test.student@example.com");

@@ -51,6 +51,30 @@
         <item>N/A</item>
     </string-array>
 
+    <!-- Fields/Filières -->
+    <string-array name="fields">
+        <item>Data Science</item>
+        <item>Software Engineering</item>
+        <item>Cybersecurity</item>
+        <item>Artificial Intelligence</item>
+        <item>Web Development</item>
+        <item>Mobile Development</item>
+        <item>Network Administration</item>
+        <item>Database Management</item>
+        <item>Digital Marketing</item>
+        <item>Autre</item>
+    </string-array>
+
+    <!-- Nouvelles chaînes -->
+    <string name="field_hint">Filière</string>
+    <string name="confidence_score">Score de confiance</string>
+    <string name="manual_entry">Saisie manuelle</string>
+    <string name="attendance_history">Historique des présences</string>
+    <string name="filter_by_course">Filtrer par cours</string>
+    <string name="filter_by_status">Filtrer par statut</string>
+    <string name="all_courses">Tous les cours</string>
+    <string name="all_statuses">Tous les statuts</string>
+
     <!-- User Roles -->
     <string-array name="user_roles">
         <item>Étudiant</item>

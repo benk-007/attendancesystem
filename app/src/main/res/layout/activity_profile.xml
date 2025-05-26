@@ -32,14 +32,14 @@
                     android:padding="24dp"
                     android:gravity="center">
 
-                    <ImageView
+                    <de.hdodenhof.circleimageview.CircleImageView
                         android:id="@+id/iv_profile_photo"
                         android:layout_width="120dp"
                         android:layout_height="120dp"
                         android:layout_marginBottom="16dp"
                         android:src="@drawable/ic_person"
-                        android:background="@drawable/circle_background"
-                        android:scaleType="centerCrop" />
+                        app:civ_border_width="3dp"
+                        app:civ_border_color="@color/primary_color" />
 
                     <TextView
                         android:id="@+id/tv_user_name"
@@ -157,6 +157,34 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="L3"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layout_field"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="12dp"
+                        android:visibility="visible">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Filière:"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tv_field"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Data Science"
                             android:textColor="@color/text_primary"
                             android:textSize="14sp"
                             android:textStyle="bold" />

@@ -25,7 +25,8 @@ public class RegisterActivity extends AppCompatActivity {
     private static final String TAG = "RegisterActivity";
 
     // Views
-    private EditText etEmail, etPassword, etConfirmPassword, etFullName, etStudentId, etPhoneNumber;
+    private EditText etEmail, etPassword, etConfirmPassword, etFullName, etStudentId, etPhoneNumber, etField; // ← NOUVELLE variable
+
     private Spinner spinnerRole, spinnerDepartment, spinnerYear;
     private Button btnRegister;
     private TextView tvLogin;
@@ -59,6 +60,7 @@ public class RegisterActivity extends AppCompatActivity {
         etFullName = findViewById(R.id.et_full_name);
         etStudentId = findViewById(R.id.et_student_id);
         etPhoneNumber = findViewById(R.id.et_phone_number);
+        etField = findViewById(R.id.et_field); // ← AJOUTER cette ligne
         spinnerRole = findViewById(R.id.spinner_role);
         spinnerDepartment = findViewById(R.id.spinner_department);
         spinnerYear = findViewById(R.id.spinner_year);
@@ -135,6 +137,7 @@ public class RegisterActivity extends AppCompatActivity {
         String fullName = etFullName.getText().toString().trim();
         String idNumber = etStudentId.getText().toString().trim();
         String phoneNumber = etPhoneNumber.getText().toString().trim();
+        String field = etField.getText().toString().trim(); // ← AJOUTER cette ligne
 
         String role = getRoleFromSpinner();
         String department = spinnerDepartment.getSelectedItem().toString();
@@ -159,7 +162,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onSuccess(FirebaseUser firebaseUser) {
                 // Créer l'objet utilisateur selon son rôle
-                saveUserToFirestore(email, fullName, idNumber, phoneNumber, role, department, year);
+                saveUserToFirestore(email, fullName, idNumber, phoneNumber, role, department, year, field);
             }
 
             @Override
@@ -247,11 +250,11 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void saveUserToFirestore(String email, String fullName, String idNumber,
-                                     String phoneNumber, String role, String department, String year) {
+                                     String phoneNumber, String role, String department, String year, String field) {
 
         switch (role) {
             case "student":
-                Student student = new Student(email, fullName, idNumber, department, year);
+                Student student = new Student(email, fullName, idNumber, department, year, field);
                 student.setPhoneNumber(phoneNumber);
 
                 firebaseManager.saveStudent(student, new FirebaseManager.DataCallback<Void>() {

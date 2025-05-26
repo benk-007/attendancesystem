@@ -1,23 +1,32 @@
 package com.example.attendancesystem.activities;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.cardview.widget.CardView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.CircleCrop;
 import com.example.attendancesystem.R;
 import com.example.attendancesystem.models.Session;
 import com.example.attendancesystem.models.Student;
 import com.example.attendancesystem.services.FirebaseManager;
+import com.example.attendancesystem.utils.NotificationHelper;
 import com.example.attendancesystem.utils.Utils;
 
 import java.util.List;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 
 public class StudentDashboardActivity extends AppCompatActivity {
 
@@ -26,10 +35,17 @@ public class StudentDashboardActivity extends AppCompatActivity {
     // Views
     private TextView tvWelcome, tvTodayStatus, tvAttendanceRate, tvNextCourse;
     private CardView cardProfile, cardHistory, cardJustification, cardSchedule;
+    private ProgressBar progressBarMain;
+    private CircleImageView ivProfileImage;
 
-    // Firebase
+    // Data
     private FirebaseManager firebaseManager;
     private Student currentStudent;
+    private boolean isDataLoading = false;
+    private NotificationHelper notificationHelper;
+
+    // Constants
+    private static final int NOTIFICATION_PERMISSION_REQUEST = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,14 +69,51 @@ public class StudentDashboardActivity extends AppCompatActivity {
         // Initialize Firebase
         firebaseManager = FirebaseManager.getInstance();
 
+        // Initialize notification helper
+        notificationHelper = new NotificationHelper(this);
+
         // Initialize views
         initViews();
+
+        // Check notification permission
+        checkNotificationPermission();
 
         // Load user data
         loadUserData();
 
         // Configure listeners
         setupListeners();
+    }
+
+    private void checkNotificationPermission() {
+        if (!Utils.hasNotificationPermission(this)) {
+            Utils.requestNotificationPermission(this, NOTIFICATION_PERMISSION_REQUEST);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == NOTIFICATION_PERMISSION_REQUEST) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Utils.showToast(this, "Notifications activées ✅");
+                testNotification();
+            } else {
+                Utils.showToast(this, "Notifications désactivées. Activez-les dans les paramètres.");
+            }
+        }
+    }
+
+    private void testNotification() {
+        if (currentStudent != null && notificationHelper.areNotificationsEnabled()) {
+            // Notification de bienvenue
+            notificationHelper.showAttendanceSuccess(
+                    "Test",
+                    Utils.getCurrentTime()
+            );
+        }
     }
 
     private void initViews() {
@@ -73,12 +126,21 @@ public class StudentDashboardActivity extends AppCompatActivity {
         cardHistory = findViewById(R.id.card_history);
         cardJustification = findViewById(R.id.card_justification);
         cardSchedule = findViewById(R.id.card_schedule);
+
+        progressBarMain = findViewById(R.id.progress_bar_main);
+        ivProfileImage = findViewById(R.id.iv_profile_image);
+
+        // Initialiser avec état de chargement
+        showMainLoading(true);
     }
 
     private void loadUserData() {
         String userEmail = Utils.getSavedUserEmail(this);
         if (userEmail != null) {
             Log.d(TAG, "Loading student data for: " + userEmail);
+
+            showMainLoading(true);
+
             firebaseManager.getStudentByEmail(userEmail, new FirebaseManager.DataCallback<Student>() {
                 @Override
                 public void onSuccess(Student student) {
@@ -94,12 +156,27 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 @Override
                 public void onFailure(String error) {
                     Log.e(TAG, "Error loading student data: " + error);
-                    Utils.showToast(StudentDashboardActivity.this, "Erreur de chargement: " + error);
+
+                    showMainLoading(false);
+                    tvWelcome.setText("Erreur de chargement");
+                    tvTodayStatus.setText("Impossible de charger les données");
+                    tvAttendanceRate.setText("--");
+                    tvNextCourse.setText("Non disponible");
+
+                    Utils.showToast(StudentDashboardActivity.this,
+                            "Erreur de chargement: " + error + "\nVeuillez réessayer.");
                 }
             });
         } else {
             Log.e(TAG, "No saved user email found");
-            Utils.showToast(this, "Utilisateur non connecté");
+            showMainLoading(false);
+            Utils.showToast(this, "Session expirée. Veuillez vous reconnecter.");
+
+            // Rediriger vers login
+            Intent loginIntent = new Intent(this, LoginActivity.class);
+            loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(loginIntent);
+            finish();
         }
     }
 
@@ -109,7 +186,46 @@ public class StudentDashboardActivity extends AppCompatActivity {
             String welcomeText = "Bonjour, " + firstName + " !";
             tvWelcome.setText(welcomeText);
 
+            loadProfileImage();
+
             Log.d(TAG, "UI updated for student: " + firstName);
+            showMainLoading(false);
+        }
+    }
+
+    private void loadProfileImage() {
+        if (currentStudent != null && currentStudent.getProfileImageUrl() != null
+                && !currentStudent.getProfileImageUrl().isEmpty()) {
+
+            Glide.with(this)
+                    .load(currentStudent.getProfileImageUrl())
+                    .transform(new CircleCrop())
+                    .placeholder(R.drawable.ic_person)
+                    .error(R.drawable.ic_person)
+                    .into(ivProfileImage);
+        } else {
+            // Image par défaut
+            ivProfileImage.setImageResource(R.drawable.ic_person);
+        }
+    }
+
+    private void showMainLoading(boolean show) {
+        isDataLoading = show;
+
+        if (show) {
+            progressBarMain.setVisibility(View.VISIBLE);
+            // Désactiver les cartes pendant le chargement
+            cardProfile.setEnabled(false);
+            cardHistory.setEnabled(false);
+            cardJustification.setEnabled(false);
+            cardSchedule.setEnabled(false);
+        } else {
+            progressBarMain.setVisibility(View.GONE);
+            // Réactiver les cartes
+            cardProfile.setEnabled(true);
+            cardHistory.setEnabled(true);
+            cardJustification.setEnabled(true);
+            cardSchedule.setEnabled(true);
         }
     }
 
@@ -168,6 +284,14 @@ public class StudentDashboardActivity extends AppCompatActivity {
             } else if (session.isCompleted() &&
                     session.getPresentStudentEmails().contains(currentStudent.getEmail())) {
                 attendedSessions++;
+
+                // Notification de présence réussie (si pas déjà notifié)
+                if (shouldNotifyAttendance(session)) {
+                    notificationHelper.showAttendanceSuccess(
+                            session.getCourseName(),
+                            Utils.formatTime(session.getEndTime())
+                    );
+                }
             }
         }
 
@@ -182,6 +306,12 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         tvTodayStatus.setText(statusText);
         Log.d(TAG, "Today status updated: " + statusText);
+    }
+
+    private boolean shouldNotifyAttendance(Session session) {
+        // Vérifier si on a déjà notifié pour cette session
+        String key = "notified_" + session.getSessionId();
+        return !Utils.getBooleanPref(this, key, false);
     }
 
     private void loadNextSession() {
@@ -209,6 +339,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
                             String timeStr = Utils.formatTime(session.getStartTime());
                             String sessionText = session.getCourseName() + " - " + timeStr + " (" + session.getRoom() + ")";
                             tvNextCourse.setText(sessionText);
+
+                            // Programmer un rappel si le cours est dans moins de 1 heure
+                            scheduleReminderIfNeeded(session);
                         } else {
                             Log.d(TAG, "No next session found");
                             tvNextCourse.setText("Aucun cours programmé");
@@ -221,6 +354,34 @@ public class StudentDashboardActivity extends AppCompatActivity {
                         tvNextCourse.setText("Erreur de chargement");
                     }
                 });
+    }
+
+    private void scheduleReminderIfNeeded(Session session) {
+        if (session.getStartTime() == null) return;
+
+        long sessionTimeMs = session.getStartTime().toDate().getTime();
+        long currentTimeMs = System.currentTimeMillis();
+        long timeDiffMs = sessionTimeMs - currentTimeMs;
+
+        // Si le cours est dans moins d'1 heure et plus de 5 minutes
+        long oneHourMs = 60 * 60 * 1000;
+        long fiveMinutesMs = 5 * 60 * 1000;
+
+        if (timeDiffMs > fiveMinutesMs && timeDiffMs <= oneHourMs) {
+            long minutesRemaining = timeDiffMs / (60 * 1000);
+            String timeRemaining = minutesRemaining + " min";
+
+            // Vérifier les préférences de l'utilisateur
+            if (currentStudent.getNotificationPreferences() != null &&
+                    currentStudent.getNotificationPreferences().isCourseReminders()) {
+
+                notificationHelper.showCourseReminder(
+                        session.getCourseName(),
+                        timeRemaining,
+                        session.getRoom()
+                );
+            }
+        }
     }
 
     private void loadAttendanceStatistics() {
@@ -299,16 +460,10 @@ public class StudentDashboardActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.action_refresh) {
-            // Refresh the dashboard data
-            if (currentStudent != null) {
-                loadTodayAttendance();
-            } else {
-                loadUserData();
-            }
-            Utils.showToast(this, "Données actualisées");
+            refreshData();
+            Utils.showToast(this, "Actualisation...");
             return true;
         } else if (id == R.id.action_test_system) {
-            // Test system functionality
             Utils.showToast(this, "Test système - Fonctionnalité à venir");
             return true;
         } else if (id == R.id.action_logout) {
@@ -317,6 +472,12 @@ public class StudentDashboardActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void refreshData() {
+        if (!isDataLoading) {
+            loadUserData();
+        }
     }
 
     private void logout() {

@@ -12,33 +12,35 @@ public class Course {
     private String teacherEmail; // Email de l'enseignant (identifiant unique)
     private String teacherName;
     private String department;
-    private List<String> enrolledStudentEmails; // Liste des emails des étudiants
+    private String field; // Ajouté pour correspondre à Firestore
+    private List<String> targetYears; // Ajouté pour correspondre à Firestore
     private boolean isActive;
     private Timestamp createdAt;
 
     // Planning du cours
-    private Schedule schedule;
+    private Schedule courseScheduleEntry; // Correspond à 'courseScheduleEntry' dans Firestore
 
     // Statistiques du cours
     private CourseStatistics statistics;
 
     // Constructeur vide requis pour Firebase
     public Course() {
-        this.enrolledStudentEmails = new ArrayList<>();
-        this.schedule = new Schedule();
+        this.targetYears = new ArrayList<>(); // Initialiser la liste
+        this.courseScheduleEntry = new Schedule();
         this.statistics = new CourseStatistics();
     }
 
     // Constructeur avec paramètres essentiels
-    public Course(String courseName, String teacherEmail, String teacherName, String department) {
+    public Course(String courseName, String teacherEmail, String teacherName, String department, String field, List<String> targetYears) {
         this.courseName = courseName;
         this.teacherEmail = teacherEmail;
         this.teacherName = teacherName;
         this.department = department;
+        this.field = field; // Nouveau champ
+        this.targetYears = targetYears != null ? targetYears : new ArrayList<>(); // Nouveau champ
         this.isActive = true;
         this.createdAt = Timestamp.now();
-        this.enrolledStudentEmails = new ArrayList<>();
-        this.schedule = new Schedule();
+        this.courseScheduleEntry = new Schedule();
         this.statistics = new CourseStatistics();
     }
 
@@ -122,28 +124,6 @@ public class Course {
         public void setTotalEnrolledStudents(int totalEnrolledStudents) { this.totalEnrolledStudents = totalEnrolledStudents; }
     }
 
-    // Méthodes utilitaires
-    public void enrollStudent(String studentEmail) {
-        if (!enrolledStudentEmails.contains(studentEmail)) {
-            enrolledStudentEmails.add(studentEmail);
-            statistics.totalEnrolledStudents = enrolledStudentEmails.size();
-        }
-    }
-
-    public void removeStudent(String studentEmail) {
-        enrolledStudentEmails.remove(studentEmail);
-        statistics.totalEnrolledStudents = enrolledStudentEmails.size();
-    }
-
-    public boolean isStudentEnrolled(String studentEmail) {
-        return enrolledStudentEmails.contains(studentEmail);
-    }
-
-    public int getEnrolledStudentsCount() {
-        return enrolledStudentEmails.size();
-    }
-
-    // Méthode pour convertir en Map pour Firebase
     public Map<String, Object> toMap() {
         Map<String, Object> map = new HashMap<>();
         map.put("courseId", courseId);
@@ -151,45 +131,43 @@ public class Course {
         map.put("teacherEmail", teacherEmail);
         map.put("teacherName", teacherName);
         map.put("department", department);
-        map.put("enrolledStudentEmails", enrolledStudentEmails);
+        map.put("field", field); // Ajouté
+        map.put("targetYears", targetYears); // Ajouté
         map.put("isActive", isActive);
         map.put("createdAt", createdAt);
-        if (schedule != null) {
-            map.put("schedule", schedule.toMap());
+        if (courseScheduleEntry != null) {
+            map.put("courseScheduleEntry", courseScheduleEntry.toMap()); // Renommé ici
         }
         if (statistics != null) {
             map.put("statistics", statistics.toMap());
         }
         return map;
     }
-
     // Getters
     public String getCourseId() { return courseId; }
     public String getCourseName() { return courseName; }
     public String getTeacherEmail() { return teacherEmail; }
     public String getTeacherName() { return teacherName; }
     public String getDepartment() { return department; }
-    public List<String> getEnrolledStudentEmails() { return enrolledStudentEmails; }
     public boolean isActive() { return isActive; }
     public Timestamp getCreatedAt() { return createdAt; }
-    public Schedule getSchedule() { return schedule; }
     public CourseStatistics getStatistics() { return statistics; }
+    public String getField() { return field; }
+    public List<String> getTargetYears() { return targetYears; }
+    public Schedule getCourseScheduleEntry() { return courseScheduleEntry; } // Renommé le getter
 
+    // Setters (ajustés)
+    public void setField(String field) { this.field = field; }
+    public void setTargetYears(List<String> targetYears) { this.targetYears = targetYears; }
+    public void setCourseScheduleEntry(Schedule courseScheduleEntry) { this.courseScheduleEntry = courseScheduleEntry; } // Renommé le setter
     // Setters
     public void setCourseId(String courseId) { this.courseId = courseId; }
     public void setCourseName(String courseName) { this.courseName = courseName; }
     public void setTeacherEmail(String teacherEmail) { this.teacherEmail = teacherEmail; }
     public void setTeacherName(String teacherName) { this.teacherName = teacherName; }
     public void setDepartment(String department) { this.department = department; }
-    public void setEnrolledStudentEmails(List<String> enrolledStudentEmails) {
-        this.enrolledStudentEmails = enrolledStudentEmails;
-        if (statistics != null) {
-            statistics.totalEnrolledStudents = enrolledStudentEmails.size();
-        }
-    }
     public void setActive(boolean active) { this.isActive = active; }
     public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
-    public void setSchedule(Schedule schedule) { this.schedule = schedule; }
     public void setStatistics(CourseStatistics statistics) { this.statistics = statistics; }
 
     @Override
@@ -199,7 +177,6 @@ public class Course {
                 ", courseName='" + courseName + '\'' +
                 ", teacherEmail='" + teacherEmail + '\'' +
                 ", department='" + department + '\'' +
-                ", enrolledStudentsCount=" + enrolledStudentEmails.size() +
                 '}';
     }
 }
