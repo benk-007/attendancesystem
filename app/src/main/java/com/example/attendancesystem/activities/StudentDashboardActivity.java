@@ -289,6 +289,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             if (session.isActive()) {
                 activeSessions++;
             } else if (session.isCompleted() &&
+                    session.getPresentStudentEmails() != null &&
                     session.getPresentStudentEmails().contains(currentStudent.getEmail())) {
                 attendedSessions++;
 
@@ -324,6 +325,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private void loadNextSession() {
         if (currentStudent == null) {
             Log.w(TAG, "Cannot load next session - currentStudent is null");
+            tvNextCourse.setText("Non disponible");
             return;
         }
 
@@ -333,7 +335,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
         firebaseManager.getNextSessionForStudent(
                 currentStudent.getEmail(),
                 currentStudent.getDepartment(),
-                currentStudent.getField(),
+                currentStudent.getField() != null ? currentStudent.getField() : "",
                 currentStudent.getYear(),
                 new FirebaseManager.DataCallback<Session>() {
                     @Override
@@ -344,7 +346,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
                                     " in " + session.getRoom());
 
                             String timeStr = Utils.formatTime(session.getStartTime());
-                            String sessionText = session.getCourseName() + " - " + timeStr + " (" + session.getRoom() + ")";
+                            String sessionText = session.getCourseName() + " - " + timeStr;
                             tvNextCourse.setText(sessionText);
 
                             // Programmer un rappel si le cours est dans moins de 1 heure
@@ -394,6 +396,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
     private void loadAttendanceStatistics() {
         if (currentStudent == null) {
             Log.w(TAG, "Cannot load attendance statistics - currentStudent is null");
+            tvAttendanceRate.setText("N/A");
             return;
         }
 
@@ -403,18 +406,18 @@ public class StudentDashboardActivity extends AppCompatActivity {
         firebaseManager.getStudentAttendanceStatistics(
                 currentStudent.getEmail(),
                 currentStudent.getDepartment(),
-                currentStudent.getField(),
+                currentStudent.getField() != null ? currentStudent.getField() : "",
                 currentStudent.getYear(),
                 new FirebaseManager.DataCallback<FirebaseManager.AttendanceStats>() {
                     @Override
                     public void onSuccess(FirebaseManager.AttendanceStats stats) {
-                        if (stats != null) {
+                        if (stats != null && stats.getTotalSessions() > 0) {
                             double rate = stats.getAttendanceRate();
                             tvAttendanceRate.setText(String.format("%.1f%%", rate));
                             Log.d(TAG, "Attendance rate loaded: " + rate + "%");
                         } else {
-                            tvAttendanceRate.setText("Calcul...");
-                            Log.d(TAG, "No attendance statistics available");
+                            tvAttendanceRate.setText("0%");
+                            Log.d(TAG, "No attendance statistics available - showing 0%");
                         }
                     }
 
@@ -435,6 +438,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             }
             startActivity(intent);
         });
+        // FIX: Corriger le listener pour cardSchedule
         cardSchedule.setOnClickListener(v -> {
             Intent intent = new Intent(this, ScheduleActivity.class);
             startActivity(intent);
@@ -446,7 +450,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // Pour la photo de profil (ajouter dans ProfileActivity)
+        // Pour la photo de profil
         btnViewPhoto.setOnClickListener(v -> {
             Intent intent = new Intent(this, ProfilePhotoViewActivity.class);
             startActivity(intent);
@@ -470,24 +474,11 @@ public class StudentDashboardActivity extends AppCompatActivity {
             Intent intent = new Intent(this, JustificationActivity.class);
             startActivity(intent);
         });
-
-        cardSchedule.setOnClickListener(v -> {
-            // TODO: Create schedule activity
-            Utils.showToast(this, "Emploi du temps à venir");
-        });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.dashboard_menu, menu);
-
-        // Ajouter une option de déconnexion rapide si elle n'existe pas
-        if (menu.findItem(R.id.action_logout) == null) {
-            menu.add(Menu.NONE, R.id.action_logout, Menu.NONE, "Déconnexion")
-                    .setIcon(R.drawable.ic_person)
-                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
-        }
-
         return true;
     }
 
@@ -509,6 +500,7 @@ public class StudentDashboardActivity extends AppCompatActivity {
 
         return super.onOptionsItemSelected(item);
     }
+
 
     private void refreshData() {
         if (!isDataLoading) {

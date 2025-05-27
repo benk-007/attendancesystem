@@ -453,27 +453,38 @@ public class FirebaseManager {
      * Récupérer l'historique de présence d'un étudiant
      */
     public void getStudentAttendanceHistory(String studentEmail, DataCallback<List<Attendance>> callback) {
+        Log.d(TAG, "Loading attendance history for: " + studentEmail);
+
         db.collection(ATTENDANCE_COLLECTION)
                 .whereEqualTo("studentEmail", studentEmail)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .get()
-                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                    @Override
-                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                        if (task.isSuccessful()) {
-                            List<Attendance> attendanceList = new ArrayList<>();
-                            for (DocumentSnapshot document : task.getResult()) {
-                                Attendance attendance = document.toObject(Attendance.class);
-                                if (attendance != null) {
-                                    attendance.setAttendanceId(document.getId());
-                                    attendanceList.add(attendance);
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        List<Attendance> attendanceList = new ArrayList<>();
+                        QuerySnapshot querySnapshot = task.getResult();
+
+                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                            for (DocumentSnapshot document : querySnapshot) {
+                                try {
+                                    Attendance attendance = document.toObject(Attendance.class);
+                                    if (attendance != null) {
+                                        attendance.setAttendanceId(document.getId());
+                                        attendanceList.add(attendance);
+                                    }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Error parsing attendance document: " + document.getId(), e);
                                 }
                             }
-                            Log.d(TAG, "Historique récupéré: " + attendanceList.size() + " entrées");
-                            callback.onSuccess(attendanceList);
-                        } else {
-                            callback.onFailure(task.getException().getMessage());
                         }
+
+                        Log.d(TAG, "Attendance history loaded: " + attendanceList.size() + " records");
+                        callback.onSuccess(attendanceList);
+                    } else {
+                        String error = task.getException() != null ?
+                                task.getException().getMessage() : "Erreur inconnue";
+                        Log.e(TAG, "Error loading attendance history: " + error);
+                        callback.onFailure("Aucun historique de présence trouvé");
                     }
                 });
     }
@@ -669,6 +680,8 @@ public class FirebaseManager {
      * Obtenir les sessions d'aujourd'hui pour un étudiant (par département, filière et année)
      */
     public void getTodaySessionsForStudent(String studentEmail, String department, String field, String year, DataCallback<List<Session>> callback) {
+        Log.d(TAG, "Loading today's sessions for: " + studentEmail + " in " + department + "/" + field + "/" + year);
+
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
@@ -679,30 +692,56 @@ public class FirebaseManager {
         calendar.add(Calendar.DAY_OF_MONTH, 1);
         Timestamp startOfNextDay = new Timestamp(calendar.getTime());
 
-        // Rechercher les sessions pour ce département, filière et année
-        db.collection(SESSIONS_COLLECTION)
-                .whereEqualTo("department", department)
-                .whereEqualTo("field", field)
-                .whereArrayContains("targetYears", year)
-                .whereGreaterThanOrEqualTo("startTime", startOfDay)
+        // Construire une requête flexible
+        Query query = db.collection(SESSIONS_COLLECTION);
+
+        if (department != null && !department.isEmpty()) {
+            query = query.whereEqualTo("department", department);
+        }
+
+        query.whereGreaterThanOrEqualTo("startTime", startOfDay)
                 .whereLessThan("startTime", startOfNextDay)
                 .orderBy("startTime")
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         List<Session> sessions = new ArrayList<>();
-                        for (DocumentSnapshot document : task.getResult()) {
-                            Session session = document.toObject(Session.class);
-                            if (session != null) {
-                                session.setSessionId(document.getId());
-                                sessions.add(session);
+                        QuerySnapshot querySnapshot = task.getResult();
+
+                        if (querySnapshot != null) {
+                            for (DocumentSnapshot document : querySnapshot) {
+                                try {
+                                    Session session = document.toObject(Session.class);
+                                    if (session != null) {
+                                        session.setSessionId(document.getId());
+
+                                        // Vérifier si l'étudiant correspond aux critères
+                                        boolean matches = true;
+                                        if (field != null && !field.isEmpty() &&
+                                                !field.equals(session.getField())) {
+                                            matches = false;
+                                        }
+                                        if (year != null && !year.isEmpty() &&
+                                                session.getTargetYears() != null &&
+                                                !session.getTargetYears().contains(year)) {
+                                            matches = false;
+                                        }
+
+                                        if (matches) {
+                                            sessions.add(session);
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Error parsing session document: " + document.getId(), e);
+                                }
                             }
                         }
-                        Log.d(TAG, "Found " + sessions.size() + " sessions today for " + field + " " + year);
+
+                        Log.d(TAG, "Found " + sessions.size() + " sessions today");
                         callback.onSuccess(sessions);
                     } else {
                         Log.e(TAG, "Error getting today's sessions", task.getException());
-                        callback.onFailure(task.getException().getMessage());
+                        callback.onSuccess(new ArrayList<>()); // Retourner liste vide
                     }
                 });
     }
@@ -862,42 +901,67 @@ public class FirebaseManager {
      * Obtenir les statistiques d'assiduité d'un étudiant (par département et filière)
      */
     public void getStudentAttendanceStatistics(String studentEmail, String department, String field, String year, DataCallback<AttendanceStats> callback) {
-        // Calculer les statistiques des 30 derniers jours
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.DAY_OF_MONTH, -30);
-        Timestamp thirtyDaysAgo = new Timestamp(calendar.getTime());
+        Log.d(TAG, "Loading statistics for student: " + studentEmail + " in " + department + "/" + field + "/" + year);
 
-        db.collection(SESSIONS_COLLECTION)
-                .whereEqualTo("department", department)
-                .whereEqualTo("field", field)
-                .whereArrayContains("targetYears", year)
-                .whereEqualTo("status", "completed")
-                .whereGreaterThanOrEqualTo("endTime", thirtyDaysAgo)
+        // Calculer les statistiques des 60 derniers jours (élargi)
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_MONTH, -60);
+        Timestamp sixtyDaysAgo = new Timestamp(calendar.getTime());
+
+        // D'abord chercher des sessions pour cet étudiant
+        Query query = db.collection(SESSIONS_COLLECTION);
+
+        // Construire la requête selon les critères disponibles
+        if (department != null && !department.isEmpty()) {
+            query = query.whereEqualTo("department", department);
+        }
+        if (field != null && !field.isEmpty()) {
+            query = query.whereEqualTo("field", field);
+        }
+        if (year != null && !year.isEmpty()) {
+            query = query.whereArrayContains("targetYears", year);
+        }
+
+        query.whereGreaterThanOrEqualTo("createdAt", sixtyDaysAgo)
                 .get()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         int totalSessions = 0;
                         int attendedSessions = 0;
 
-                        for (DocumentSnapshot document : task.getResult()) {
-                            Session session = document.toObject(Session.class);
-                            if (session != null && session.getEnrolledStudentEmails().contains(studentEmail)) {
-                                totalSessions++;
-                                if (session.getPresentStudentEmails().contains(studentEmail)) {
-                                    attendedSessions++;
+                        QuerySnapshot querySnapshot = task.getResult();
+                        if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                            for (DocumentSnapshot document : querySnapshot) {
+                                try {
+                                    Session session = document.toObject(Session.class);
+                                    if (session != null &&
+                                            session.getEnrolledStudentEmails() != null &&
+                                            session.getEnrolledStudentEmails().contains(studentEmail)) {
+
+                                        totalSessions++;
+                                        if (session.getPresentStudentEmails() != null &&
+                                                session.getPresentStudentEmails().contains(studentEmail)) {
+                                            attendedSessions++;
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    Log.w(TAG, "Error parsing session document: " + document.getId(), e);
                                 }
                             }
                         }
 
                         AttendanceStats stats = new AttendanceStats(totalSessions, attendedSessions);
-                        Log.d(TAG, "Attendance stats for " + studentEmail + ": " + attendedSessions + "/" + totalSessions);
+                        Log.d(TAG, "Statistics calculated - Rate: " + stats.getAttendanceRate() +
+                                "%, Total: " + totalSessions + ", Present: " + attendedSessions);
                         callback.onSuccess(stats);
                     } else {
                         Log.e(TAG, "Error getting attendance statistics", task.getException());
-                        callback.onFailure(task.getException().getMessage());
+                        // Retourner des stats vides plutôt qu'une erreur
+                        callback.onSuccess(new AttendanceStats(0, 0));
                     }
                 });
     }
+
 
     /**
      * Obtenir les sessions d'une filière pour une semaine donnée
@@ -1059,25 +1123,114 @@ public class FirebaseManager {
     // This method needs to be implemented to fetch courses associated with the student
     // based on department, field, and year.
     public void getStudentCourses(String studentEmail, String department, String field, String year, DataCallback<List<Map<String, String>>> callback) {
-        // AJOUTER la vérification du champ field
+        Log.d(TAG, "Searching courses for - Department: " + department + ", Field: " + field + ", Year: " + year);
+
+        // D'abord essayer une requête complète
         db.collection("courses")
                 .whereEqualTo("department", department)
-                .whereEqualTo("field", field)  // ← LIGNE AJOUTÉE
-                .whereArrayContains("targetYears", year)  // ← MODIFIER de whereEqualTo vers whereArrayContains
+                .whereEqualTo("field", field)
+                .whereArrayContains("targetYears", year)
+                .whereEqualTo("isActive", true) // Seulement les cours actifs
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        // Des cours trouvés avec critères complets
+                        List<Map<String, String>> courses = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            Map<String, String> course = new HashMap<>();
+                            course.put("id", document.getId());
+                            course.put("name", document.getString("courseName"));
+                            course.put("teacherName", document.getString("teacherName"));
+                            course.put("department", document.getString("department"));
+                            course.put("field", document.getString("field"));
+
+                            // Ajouter les détails du planning si disponibles
+                            Map<String, Object> schedule = (Map<String, Object>) document.get("courseScheduleEntry");
+                            if (schedule != null) {
+                                course.put("dayOfWeek", (String) schedule.get("dayOfWeek"));
+                                course.put("timeSlot", schedule.get("startTime") + "-" + schedule.get("endTime"));
+                                course.put("room", (String) schedule.get("room"));
+                            }
+
+                            courses.add(course);
+                        }
+                        Log.d(TAG, "Found " + courses.size() + " courses with complete criteria");
+                        callback.onSuccess(courses);
+                    } else {
+                        // Aucun cours trouvé avec critères complets, essayer avec département seulement
+                        Log.d(TAG, "No courses found with complete criteria, trying department only");
+                        fallbackSearchByDepartment(department, year, callback);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error in primary course search: " + e.getMessage());
+                    // En cas d'erreur, essayer la recherche de fallback
+                    fallbackSearchByDepartment(department, year, callback);
+                });
+    }
+
+    // Méthode de fallback pour chercher seulement par département
+    private void fallbackSearchByDepartment(String department, String year, DataCallback<List<Map<String, String>>> callback) {
+        Log.d(TAG, "Fallback search - Department: " + department + ", Year: " + year);
+
+        db.collection("courses")
+                .whereEqualTo("department", department)
+                .whereArrayContains("targetYears", year)
+                .whereEqualTo("isActive", true)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    if (!queryDocumentSnapshots.isEmpty()) {
+                        List<Map<String, String>> courses = new ArrayList<>();
+                        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                            Map<String, String> course = new HashMap<>();
+                            course.put("id", document.getId());
+                            course.put("name", document.getString("courseName"));
+                            course.put("teacherName", document.getString("teacherName"));
+                            course.put("department", document.getString("department"));
+                            course.put("field", document.getString("field"));
+                            courses.add(course);
+                        }
+                        Log.d(TAG, "Found " + courses.size() + " courses with department fallback");
+                        callback.onSuccess(courses);
+                    } else {
+                        // Dernière tentative : tous les cours actifs
+                        Log.d(TAG, "No courses found with department, trying all active courses");
+                        getAllActiveCourses(callback);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error in fallback search: " + e.getMessage());
+                    getAllActiveCourses(callback);
+                });
+    }
+
+    // Dernière méthode de fallback : tous les cours actifs
+    private void getAllActiveCourses(DataCallback<List<Map<String, String>>> callback) {
+        Log.d(TAG, "Final fallback: getting all active courses");
+
+        db.collection("courses")
+                .whereEqualTo("isActive", true)
+                .limit(20) // Limiter pour éviter trop de résultats
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     List<Map<String, String>> courses = new ArrayList<>();
                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                         Map<String, String> course = new HashMap<>();
                         course.put("id", document.getId());
-                        course.put("name", document.getString("courseName"));  // ← MODIFIER de "name" vers "courseName"
+                        course.put("name", document.getString("courseName"));
+                        course.put("teacherName", document.getString("teacherName"));
+                        course.put("department", document.getString("department"));
+                        course.put("field", document.getString("field"));
                         courses.add(course);
                     }
+                    Log.d(TAG, "Final fallback found " + courses.size() + " courses");
                     callback.onSuccess(courses);
                 })
-                .addOnFailureListener(e -> callback.onFailure("Error getting student courses: " + e.getMessage()));
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Error in final fallback: " + e.getMessage());
+                    callback.onFailure("Impossible de charger les cours: " + e.getMessage());
+                });
     }
-
 
     // --- Justification Operations ---
 

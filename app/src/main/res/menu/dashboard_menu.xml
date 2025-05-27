@@ -5,16 +5,19 @@
     <item
         android:id="@+id/action_refresh"
         android:title="Actualiser"
-        android:icon="@android:drawable/ic_menu_rotate"
+        android:icon="@drawable/ic_refresh"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_test_system"
         android:title="Tester le système"
+        android:icon="@drawable/ic_bug_report"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_logout"
         android:title="Se déconnecter"
+        android:icon="@drawable/ic_logout"
         app:showAsAction="never" />
+
 </menu>
