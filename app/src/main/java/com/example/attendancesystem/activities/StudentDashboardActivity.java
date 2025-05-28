@@ -408,9 +408,9 @@ public class StudentDashboardActivity extends AppCompatActivity {
                 currentStudent.getDepartment(),
                 currentStudent.getField() != null ? currentStudent.getField() : "",
                 currentStudent.getYear(),
-                new FirebaseManager.DataCallback<FirebaseManager.AttendanceStats>() {
+                new FirebaseManager.DataCallback<FirebaseManager.AttendanceStatsDetailed>() {
                     @Override
-                    public void onSuccess(FirebaseManager.AttendanceStats stats) {
+                    public void onSuccess(FirebaseManager.AttendanceStatsDetailed stats) {
                         if (stats != null && stats.getTotalSessions() > 0) {
                             double rate = stats.getAttendanceRate();
                             tvAttendanceRate.setText(String.format("%.1f%%", rate));

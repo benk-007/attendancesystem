@@ -14,8 +14,11 @@ import com.example.attendancesystem.R;
 import com.example.attendancesystem.models.Attendance;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import android.app.AlertDialog;
+import android.content.Context;
 
 public class AttendanceHistoryAdapter extends RecyclerView.Adapter<AttendanceHistoryAdapter.AttendanceViewHolder> {
 
@@ -83,46 +86,118 @@ public class AttendanceHistoryAdapter extends RecyclerView.Adapter<AttendanceHis
 
         public void bind(Attendance attendance) {
             // Nom du cours
+            String statusIcon = getStatusIcon(attendance.getStatus());
             tvCourseName.setText(attendance.getCourseName());
 
-            // Date et heure
-            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            // Date et heure DÉTAILLÉE
             if (attendance.getTimestamp() != null) {
-                tvDateTime.setText(dateTimeFormat.format(attendance.getTimestamp().toDate()));
+                SimpleDateFormat dateFormat = new SimpleDateFormat("EEEE dd MMMM yyyy", Locale.FRENCH);
+                SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss", Locale.FRENCH);
+
+                Date attendanceDate = attendance.getTimestamp().toDate();
+                String dateStr = dateFormat.format(attendanceDate);
+                String timeStr = timeFormat.format(attendanceDate);
+
+                tvDateTime.setText(String.format("%s\n🕐 %s",
+                        capitalizeFirst(dateStr), timeStr));
             } else {
                 tvDateTime.setText("Date non disponible");
             }
 
             // Statut
             String status = attendance.getStatus();
+            String statusText = getStatusDisplayText(status);
             tvStatus.setText(getStatusDisplayText(status));
 
             int statusColor = getStatusColor(status);
             tvStatus.setTextColor(ContextCompat.getColor(context, statusColor));
             statusIndicator.setBackgroundColor(ContextCompat.getColor(context, statusColor));
 
-            // Score de confiance (seulement pour les pointages automatiques)
+            // Informations détaillées de confiance
             if (attendance.isManualEntry()) {
-                tvConfidence.setText("Saisie manuelle");
+                tvConfidence.setText("✏️ Saisie manuelle");
                 tvConfidence.setTextColor(ContextCompat.getColor(context, R.color.text_secondary));
             } else {
                 double confidence = attendance.getConfidence();
-                String confidenceText = String.format(Locale.getDefault(), "Confiance: %.0f%%", confidence * 100);
+                String confidenceText = String.format(Locale.getDefault(),
+                        "🤖 Reconnaissance: %.0f%%", confidence * 100);
                 tvConfidence.setText(confidenceText);
 
                 // Couleur selon le niveau de confiance
                 int confidenceColor;
-                if (confidence >= 0.8) {
+                if (confidence >= 0.9) {
                     confidenceColor = R.color.success_color;
-                } else if (confidence >= 0.6) {
+                } else if (confidence >= 0.7) {
                     confidenceColor = R.color.warning_color;
                 } else {
                     confidenceColor = R.color.error_color;
                 }
                 tvConfidence.setTextColor(ContextCompat.getColor(context, confidenceColor));
             }
+            // NOUVEAU: Afficher les détails supplémentaires au clic
+            itemView.setOnClickListener(v -> showAttendanceDetails(attendance));
         }
 
+        // Méthodes helper
+        private String getStatusIcon(String status) {
+            switch (status) {
+                case "present": return "✅";
+                case "absent": return "❌";
+                case "justified": return "📋";
+                default: return "❓";
+            }
+        }
+
+        private String capitalizeFirst(String text) {
+            if (text == null || text.isEmpty()) return text;
+            return text.substring(0, 1).toUpperCase() + text.substring(1);
+        }
+
+        // NOUVEAU: Dialog avec détails complets
+        private void showAttendanceDetails(Attendance attendance) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+
+            // Créer le contenu détaillé
+            StringBuilder details = new StringBuilder();
+            details.append("📚 Cours: ").append(attendance.getCourseName()).append("\n\n");
+
+            if (attendance.getTimestamp() != null) {
+                SimpleDateFormat fullFormat = new SimpleDateFormat("EEEE dd MMMM yyyy 'à' HH:mm:ss", Locale.FRENCH);
+                details.append("📅 Date/Heure: ").append(fullFormat.format(attendance.getTimestamp().toDate())).append("\n\n");
+            }
+
+            details.append("📊 Statut: ").append(getStatusDisplayText(attendance.getStatus())).append("\n\n");
+
+            if (!attendance.isManualEntry()) {
+                details.append("🤖 Confiance: ").append(String.format("%.1f%%", attendance.getConfidence() * 100)).append("\n\n");
+
+                if (attendance.getAttendanceDetails() != null) {
+                    Attendance.AttendanceDetails ad = attendance.getAttendanceDetails();
+                    details.append("⚙️ Détails techniques:\n");
+                    details.append("  • Temps de traitement: ").append(ad.getProcessingTime()).append("ms\n");
+                    details.append("  • Tentatives: ").append(ad.getRetryCount()).append("\n");
+                    details.append("  • Lieu: ").append(ad.getLocation()).append("\n\n");
+                }
+            } else {
+                details.append("✏️ Saisie manuelle\n");
+                if (attendance.getModifiedBy() != null) {
+                    details.append("👤 Modifié par: ").append(attendance.getModifiedBy()).append("\n");
+                }
+                if (attendance.getModificationReason() != null) {
+                    details.append("📝 Raison: ").append(attendance.getModificationReason()).append("\n");
+                }
+                details.append("\n");
+            }
+
+            if (attendance.getSessionId() != null) {
+                details.append("🔗 ID Session: ").append(attendance.getSessionId()).append("\n");
+            }
+
+            builder.setTitle("Détails de la Présence")
+                    .setMessage(details.toString())
+                    .setPositiveButton("Fermer", null)
+                    .show();
+        }
         private String getStatusDisplayText(String status) {
             switch (status) {
                 case "present":
